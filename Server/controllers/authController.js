@@ -184,3 +184,36 @@ exports.toggleStaffStatus = async (req, res) => {
     });
   }
 };
+// @desc    Update/Modify staff account (SRS: "modify staff accounts")
+// @route   PUT /api/auth/staff/:id
+// @access  Private (Admin only)
+exports.updateStaff = async (req, res) => {
+  try {
+    const { name, role, phone } = req.body;
+    const staff = await User.findById(req.params.id);
+
+    if (!staff) {
+      return res.status(404).json({ success: false, message: 'Staff member not found' });
+    }
+
+    if (name) staff.name = name;
+    if (role) staff.role = role;
+    if (phone !== undefined) staff.phone = phone;
+
+    await staff.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Staff profile updated successfully',
+      staff: {
+        id: staff._id,
+        name: staff.name,
+        email: staff.email,
+        role: staff.role,
+        phone: staff.phone
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

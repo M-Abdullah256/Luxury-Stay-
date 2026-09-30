@@ -5,10 +5,11 @@ const {
   getMe,
   createStaff,
   getAllStaff,
-  toggleStaffStatus
+  toggleStaffStatus,
+  updateStaff // <-- add
 } = require('../controllers/authController');
 const { protect, authorize } = require('../middleware/authMiddleware');
-
+router.put('/staff/:id', protect, authorize('admin'), updateStaff);
 // Public route
 router.post('/login', login);
 
