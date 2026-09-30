@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Hotel, KeyRound, Menu, X, PhoneCall } from 'lucide-react';
+import { Hotel, KeyRound, Menu, X, PhoneCall, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
@@ -54,22 +54,17 @@ const Navbar = () => {
           </div>
         </Link>
 
-        {/* Desktop Links */}
-        <div style={{ display: 'none', md: 'flex', gap: '28px', alignItems: 'center' }} className="nav-desktop-links">
+        {/* Desktop Guest Links (No Login Required) */}
+        <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }} className="nav-desktop-links">
           <Link to="/" style={linkStyle}>Home</Link>
-          <a href="#rooms" style={linkStyle}>Suites & Rooms</a>
-          <a href="#experience" style={linkStyle}>The Experience</a>
-          <a href="#amenities" style={linkStyle}>Amenities</a>
-          <a href="#reviews" style={linkStyle}>Guest Reviews</a>
+          <Link to="/rooms" style={linkStyle}>Suites & Rooms</Link>
+          <Link to="/my-booking" style={{ ...linkStyle, color: 'var(--primary-gold)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Search size={14} /> Track Booking
+          </Link>
         </div>
 
-        {/* Action Button: Staff Portal / Dashboard */}
+        {/* Action Button: Staff Portal Login */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ display: 'none', lg: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-gold)', fontSize: '14px' }}>
-            <PhoneCall size={16} />
-            <span>+92 (021) 111-LUXURY</span>
-          </div>
-
           {user ? (
             <button
               onClick={() => navigate('/dashboard')}
@@ -101,7 +96,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu Dropdown */}
+      {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div style={{
           marginTop: '16px',
@@ -114,10 +109,8 @@ const Navbar = () => {
           gap: '16px'
         }}>
           <Link to="/" onClick={() => setMobileMenuOpen(false)} style={linkStyle}>Home</Link>
-          <a href="#rooms" onClick={() => setMobileMenuOpen(false)} style={linkStyle}>Suites & Rooms</a>
-          <a href="#experience" onClick={() => setMobileMenuOpen(false)} style={linkStyle}>The Experience</a>
-          <a href="#amenities" onClick={() => setMobileMenuOpen(false)} style={linkStyle}>Amenities</a>
-          <a href="#reviews" onClick={() => setMobileMenuOpen(false)} style={linkStyle}>Guest Reviews</a>
+          <Link to="/rooms" onClick={() => setMobileMenuOpen(false)} style={linkStyle}>Suites & Rooms</Link>
+          <Link to="/my-booking" onClick={() => setMobileMenuOpen(false)} style={{ ...linkStyle, color: 'var(--primary-gold)' }}>Track My Booking</Link>
         </div>
       )}
     </nav>

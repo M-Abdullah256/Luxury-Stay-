@@ -55,15 +55,16 @@ const LandingPage = () => {
     comments: ''
   });
 
-  const getRoomImg = (type) => {
-    switch(type) {
-      case 'Standard': return '/Images/room-standard.jpg';
-      case 'Deluxe': return '/Images/room-deluxe.jpg';
-      case 'Suite': return '/Images/room-suite.jpg';
-      case 'Executive Suite': return '/Images/room-suite.jpg';
-      default: return '/Images/room-deluxe.jpg';
-    }
-  };
+ const getRoomImg = (type) => {
+  switch(type) {
+    case 'Standard': return '/Images/room-standard.jpg';
+    case 'Deluxe': return '/Images/room-deluxe.jpg';
+    case 'Suite': return '/Images/room-suite.jpg';
+    case 'Executive Suite': return '/Images/room-executive.jpg';       // <-- Nayi image
+    case 'Presidential Suite': return '/Images/room-presidential.jpg'; // <-- Nayi image
+    default: return '/Images/room-deluxe.jpg';
+  }
+};
 
   useEffect(() => {
     const fetchRooms = async () => {

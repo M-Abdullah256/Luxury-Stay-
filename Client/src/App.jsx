@@ -3,6 +3,8 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import LandingPage from './pages/LandingPage';
+import PublicRooms from './pages/PublicRooms';
+import TrackBooking from './pages/TrackBooking';
 import LoginPage from './pages/LoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './components/DashboardLayout';
@@ -14,7 +16,7 @@ import HousekeepingPage from './pages/HousekeepingPage';
 import MaintenancePage from './pages/MaintenancePage';
 import GuestsList from './pages/GuestsList';
 import StaffManagement from './pages/StaffManagement';
-import SystemSettings from './pages/SystemSettings'; // <-- Naya import
+import SystemSettings from './pages/SystemSettings';
 
 function App() {
   const location = useLocation();
@@ -26,11 +28,13 @@ function App() {
 
       <main style={{ flex: 1 }}>
         <Routes>
-          {/* Public Routes */}
+          {/* Public Customer Facing Routes (Zero Login Required!) */}
           <Route path="/" element={<LandingPage />} />
+          <Route path="/rooms" element={<PublicRooms />} />
+          <Route path="/my-booking" element={<TrackBooking />} />
           <Route path="/login" element={<LoginPage />} />
 
-          {/* Protected HMS Internal Dashboard Routes */}
+          {/* Protected HMS Internal Dashboard Routes (Staff Credentials Required) */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route index element={<DashboardOverview />} />
@@ -41,7 +45,7 @@ function App() {
               <Route path="maintenance" element={<MaintenancePage />} />
               <Route path="guests" element={<GuestsList />} />
               <Route path="staff" element={<StaffManagement />} />
-              <Route path="settings" element={<SystemSettings />} /> {/* <-- Naya route */}
+              <Route path="settings" element={<SystemSettings />} />
             </Route>
           </Route>
         </Routes>

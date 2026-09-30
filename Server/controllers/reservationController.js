@@ -28,7 +28,7 @@ exports.getAllReservations = async (req, res) => {
 
 // @desc    Create new booking / reservation with Date Validation
 // @route   POST /api/reservations
-// @access  Private (Staff only) / Public
+// @access  Public / Staff
 exports.createReservation = async (req, res) => {
   try {
     const { guestId, roomId, checkInDate, checkOutDate, guestsCount, notes } = req.body;
@@ -44,7 +44,7 @@ exports.createReservation = async (req, res) => {
       });
     }
 
-    // 2. Block Past Dates (Cannot book in the past)
+    // 2. Block Past Dates
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (checkIn < today) {
@@ -54,7 +54,7 @@ exports.createReservation = async (req, res) => {
       });
     }
 
-    // 3. Check if room exists and is not under maintenance
+    // 3. Room status check
     const room = await Room.findById(roomId);
     if (!room) {
       return res.status(404).json({ success: false, message: 'Room not found' });
@@ -130,7 +130,6 @@ exports.checkIn = async (req, res) => {
     reservation.keyCardIssued = true;
     await reservation.save();
 
-    // Automatically mark Room as 'Occupied'
     await Room.findByIdAndUpdate(reservation.room, { status: 'Occupied' });
 
     res.status(200).json({
@@ -143,7 +142,7 @@ exports.checkIn = async (req, res) => {
   }
 };
 
-// @desc    Perform Guest Check-out (SRS Requirement: Automatically triggers Room Cleaning)
+// @desc    Perform Guest Check-out (SRS Requirement: Automated Room Status Update)
 // @route   PATCH /api/reservations/:id/check-out
 // @access  Private (Staff only)
 exports.checkOut = async (req, res) => {
@@ -166,7 +165,6 @@ exports.checkOut = async (req, res) => {
     reservation.keyCardIssued = false;
     await reservation.save();
 
-    // Automatically mark Room as 'Cleaning' as required by SRS
     await Room.findByIdAndUpdate(reservation.room, { status: 'Cleaning' });
 
     res.status(200).json({
@@ -174,6 +172,31 @@ exports.checkOut = async (req, res) => {
       message: 'Guest checked-out successfully. Room status set to Cleaning.',
       reservation
     });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Public Booking Lookup by Reference (SRS: No Login Required for Guests)
+// @route   GET /api/reservations/lookup/:reference
+// @access  Public
+exports.lookupReservation = async (req, res) => {
+  try {
+    const { reference } = req.params;
+    const reservation = await Reservation.findOne({
+      bookingReference: reference.toUpperCase().trim()
+    })
+      .populate('guest', 'fullName email phone')
+      .populate('room', 'roomNumber roomType pricePerNight floor amenities description');
+
+    if (!reservation) {
+      return res.status(404).json({
+        success: false,
+        message: 'No reservation found matching this booking reference code.'
+      });
+    }
+
+    res.status(200).json({ success: true, reservation });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
