@@ -10,18 +10,38 @@ import {
   Phone, 
   X, 
   Lock,
-  Edit2
+  Edit2,
+  KeyRound,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 const StaffManagement = () => {
   const { user } = useAuth();
   const [staffList, setStaffList] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Modals State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  
   const [submitting, setSubmitting] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [showEditPassword, setShowEditPassword] = useState(false);
 
-  // New Staff Form
+  // New Staff Form State
   const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'receptionist',
+    phone: ''
+  });
+
+  // Edit Staff Form State (With Editable Email & Password)
+  const [editFormData, setEditFormData] = useState({
+    id: '',
     name: '',
     email: '',
     password: '',
@@ -45,7 +65,7 @@ const StaffManagement = () => {
     fetchStaff();
   }, []);
 
-  // Toggle Activate / Deactivate (SRS Requirement)
+  // Toggle Activate / Deactivate
   const handleToggleStatus = async (staffId, currentStatus, staffName) => {
     const action = currentStatus ? 'Deactivate' : 'Activate';
     if (!window.confirm(`Are you sure you want to ${action} ${staffName}'s account?`)) return;
@@ -58,7 +78,52 @@ const StaffManagement = () => {
     }
   };
 
-  // Create Staff Handler
+  // Open Edit Modal with Pre-filled Info
+  const handleOpenEditModal = (staff) => {
+    setErrorMsg('');
+    setShowEditPassword(false);
+    setEditFormData({
+      id: staff._id,
+      name: staff.name,
+      email: staff.email,
+      password: '', // Blank initially (leave blank to keep unchanged)
+      role: staff.role,
+      phone: staff.phone || ''
+    });
+    setIsEditModalOpen(true);
+  };
+
+  // Submit Profile & Credentials Modifications
+  const handleUpdateStaff = async (e) => {
+    e.preventDefault();
+    setUpdating(true);
+    setErrorMsg('');
+
+    try {
+      const payload = {
+        name: editFormData.name,
+        email: editFormData.email,
+        role: editFormData.role,
+        phone: editFormData.phone
+      };
+
+      // Only include password if user typed a new one
+      if (editFormData.password.trim() !== '') {
+        payload.password = editFormData.password;
+      }
+
+      await API.put(`/auth/staff/${editFormData.id}`, payload);
+
+      setIsEditModalOpen(false);
+      fetchStaff(); // Refresh table
+    } catch (err) {
+      setErrorMsg(err.response?.data?.message || 'Failed to update staff profile');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  // Create New Staff
   const handleCreateStaff = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -84,7 +149,7 @@ const StaffManagement = () => {
             Staff & Access Control Management
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
-            Provision employee access levels, configure managerial permissions, and toggle account activation.
+            Provision employee access levels, modify staff credentials, emails & passwords, and control account activation.
           </p>
         </div>
 
@@ -117,6 +182,7 @@ const StaffManagement = () => {
             ) : (
               staffList.map((st) => (
                 <tr key={st._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  {/* Name & Email */}
                   <td style={{ padding: '14px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <div style={{
@@ -138,6 +204,8 @@ const StaffManagement = () => {
                       </div>
                     </div>
                   </td>
+
+                  {/* Role Badge */}
                   <td style={{ padding: '14px' }}>
                     <span style={{
                       padding: '4px 10px',
@@ -151,35 +219,67 @@ const StaffManagement = () => {
                       {st.role}
                     </span>
                   </td>
+
+                  {/* Phone */}
                   <td style={{ padding: '14px', color: '#cbd5e1' }}>{st.phone || 'N/A'}</td>
+
+                  {/* Status Badge */}
                   <td style={{ padding: '14px' }}>
                     <span className={`badge badge-${st.isActive ? 'available' : 'occupied'}`}>
                       ● {st.isActive ? 'Active' : 'Deactivated'}
                     </span>
                   </td>
+
+                  {/* Date */}
                   <td style={{ padding: '14px', color: 'var(--text-muted)' }}>
                     {new Date(st.createdAt).toLocaleDateString()}
                   </td>
+
+                  {/* Actions */}
                   <td style={{ padding: '14px', textAlign: 'center' }}>
-                    {st._id !== user?.id && (
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                      
+                      {/* EDIT BUTTON */}
                       <button
-                        onClick={() => handleToggleStatus(st._id, st.isActive, st.name)}
+                        onClick={() => handleOpenEditModal(st)}
                         style={{
-                          background: st.isActive ? 'rgba(244, 63, 94, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                          border: `1px solid ${st.isActive ? '#fb7185' : '#34d399'}`,
-                          color: st.isActive ? '#fb7185' : '#34d399',
+                          background: 'rgba(56, 189, 248, 0.1)',
+                          border: '1px solid rgba(56, 189, 248, 0.3)',
+                          color: '#38bdf8',
                           padding: '6px 12px',
                           borderRadius: '6px',
                           cursor: 'pointer',
                           fontSize: '11px',
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '6px'
+                          gap: '4px'
                         }}
+                        title="Modify Credentials & Role"
                       >
-                        {st.isActive ? <><UserX size={14} /> Deactivate</> : <><UserCheck size={14} /> Activate</>}
+                        <Edit2 size={13} /> Edit
                       </button>
-                    )}
+
+                      {/* DEACTIVATE / ACTIVATE BUTTON */}
+                      {st._id !== user?.id && (
+                        <button
+                          onClick={() => handleToggleStatus(st._id, st.isActive, st.name)}
+                          style={{
+                            background: st.isActive ? 'rgba(244, 63, 94, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                            border: `1px solid ${st.isActive ? '#fb7185' : '#34d399'}`,
+                            color: st.isActive ? '#fb7185' : '#34d399',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '11px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          {st.isActive ? <><UserX size={13} /> Deactivate</> : <><UserCheck size={13} /> Activate</>}
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))
@@ -188,7 +288,135 @@ const StaffManagement = () => {
         </table>
       </div>
 
-      {/* CREATE STAFF MODAL */}
+      {/* ================= MODAL 1: EDIT STAFF PROFILE & CREDENTIALS ================= */}
+      {isEditModalOpen && (
+        <div style={modalBackdropStyle}>
+          <div className="luxury-card" style={{ width: '100%', maxWidth: '460px', padding: '26px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Edit2 size={18} color="var(--primary-gold)" />
+                <h3 style={{ color: '#fff', fontSize: '18px' }}>Modify Staff Credentials</h3>
+              </div>
+              <button onClick={() => setIsEditModalOpen(false)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            {errorMsg && (
+              <div style={{ background: 'rgba(244, 63, 94, 0.15)', border: '1px solid var(--danger-rose)', color: '#fb7185', padding: '10px', borderRadius: '8px', fontSize: '12px', marginBottom: '14px' }}>
+                {errorMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleUpdateStaff} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {/* Full Name */}
+              <div>
+                <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>
+                  Staff Full Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  style={inputStyle}
+                />
+              </div>
+
+              {/* Editable Work Email Address */}
+              <div>
+                <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>
+                  Work Email Address (Login ID) *
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <Mail size={16} color="var(--primary-gold)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+                  <input
+                    type="email"
+                    required
+                    value={editFormData.email}
+                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                    style={{ ...inputStyle, paddingLeft: '38px' }}
+                  />
+                </div>
+              </div>
+
+              {/* Editable / Reset Password Field with Eye Toggle */}
+              <div>
+                <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>
+                  Reset Password <span style={{ color: 'var(--text-muted)' }}>(Leave blank to keep unchanged)</span>
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <KeyRound size={16} color="var(--primary-gold)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+                  <input
+                    type={showEditPassword ? 'text' : 'password'}
+                    placeholder="Enter new password (min 6 chars)"
+                    value={editFormData.password}
+                    onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
+                    style={{ ...inputStyle, paddingLeft: '38px', paddingRight: '40px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowEditPassword(!showEditPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '10px',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: showEditPassword ? 'var(--primary-gold)' : '#94a3b8'
+                    }}
+                  >
+                    {showEditPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Role Dropdown */}
+              <div>
+                <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>
+                  Access Role Level *
+                </label>
+                <select
+                  value={editFormData.role}
+                  onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
+                  style={inputStyle}
+                >
+                  <option value="receptionist">Receptionist (Front Desk)</option>
+                  <option value="manager">Manager (Reports & Ops)</option>
+                  <option value="housekeeping">Housekeeping (Room Tasks)</option>
+                  <option value="admin">Administrator (Full Control)</option>
+                </select>
+              </div>
+
+              {/* Phone */}
+              <div>
+                <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>
+                  Contact Phone Number
+                </label>
+                <input
+                  type="text"
+                  placeholder="+92 300 1234567"
+                  value={editFormData.phone}
+                  onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                  style={inputStyle}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                <button type="button" onClick={() => setIsEditModalOpen(false)} className="btn-secondary">
+                  Cancel
+                </button>
+                <button type="submit" disabled={updating} className="btn-gold">
+                  {updating ? 'Updating...' : 'Save Modifications'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL 2: PROVISION NEW STAFF ================= */}
       {isModalOpen && (
         <div style={modalBackdropStyle}>
           <div className="luxury-card" style={{ width: '100%', maxWidth: '460px', padding: '24px' }}>

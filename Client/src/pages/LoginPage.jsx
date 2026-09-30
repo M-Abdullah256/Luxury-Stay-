@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Hotel, Lock, Mail, ArrowRight, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Hotel, Lock, Mail, ArrowRight, ArrowLeft, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -42,11 +42,42 @@ const LoginPage = () => {
       <div className="luxury-card" style={{
         width: '100%',
         maxWidth: '460px',
-        padding: '40px 32px',
-        border: '1px solid rgba(197, 168, 128, 0.3)'
+        padding: '36px 32px',
+        border: '1px solid rgba(197, 168, 128, 0.3)',
+        position: 'relative'
       }}>
+        {/* Back to Website Button */}
+        <button
+          type="button"
+          onClick={() => navigate('/')}
+          style={{
+            background: 'rgba(255, 255, 255, 0.04)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            color: '#cbd5e1',
+            fontSize: '12px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            cursor: 'pointer',
+            padding: '6px 12px',
+            borderRadius: '8px',
+            marginBottom: '20px',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--primary-gold)';
+            e.currentTarget.style.borderColor = 'rgba(197, 168, 128, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = '#cbd5e1';
+            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+          }}
+        >
+          <ArrowLeft size={14} /> Return to Public Website
+        </button>
+
         {/* Brand Header */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <div style={{
             background: 'linear-gradient(135deg, #c5a880 0%, #b09166 100%)',
             width: '50px',
@@ -132,7 +163,7 @@ const LoginPage = () => {
                   width: '100%',
                   background: 'rgba(15, 23, 42, 0.8)',
                   border: '1px solid var(--border-color)',
-                  padding: '12px 44px 12px 42px', // Right padding eye button ke liye
+                  padding: '12px 44px 12px 42px',
                   borderRadius: '10px',
                   color: '#fff',
                   fontSize: '14px',
@@ -166,7 +197,7 @@ const LoginPage = () => {
             type="submit"
             disabled={loading}
             className="btn-gold"
-            style={{ width: '100%', justifyContent: 'center', padding: '12px', fontSize: '15px', marginTop: '10px' }}
+            style={{ width: '100%', justifyContent: 'center', padding: '12px', fontSize: '15px', marginTop: '6px' }}
           >
             {loading ? 'Authenticating...' : <>Authenticate <ArrowRight size={18} /></>}
           </button>

@@ -1,7 +1,7 @@
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 
-// @desc    Login Staff / Admin
+// @desc    Login Staff / Admin (Aapka 100% Original Code - Untouched)
 // @route   POST /api/auth/login
 // @access  Public
 exports.login = async (req, res) => {
@@ -184,12 +184,13 @@ exports.toggleStaffStatus = async (req, res) => {
     });
   }
 };
-// @desc    Update/Modify staff account (SRS: "modify staff accounts")
+
+// @desc    Update/Modify staff account (Name, Email, Password, Role, Phone)
 // @route   PUT /api/auth/staff/:id
 // @access  Private (Admin only)
 exports.updateStaff = async (req, res) => {
   try {
-    const { name, role, phone } = req.body;
+    const { name, email, password, role, phone } = req.body;
     const staff = await User.findById(req.params.id);
 
     if (!staff) {
@@ -197,8 +198,14 @@ exports.updateStaff = async (req, res) => {
     }
 
     if (name) staff.name = name;
+    if (email) staff.email = email;
     if (role) staff.role = role;
     if (phone !== undefined) staff.phone = phone;
+
+    // Naya password agar likha gaya ho to save karo (User model ka pre-save hook khud hash karega)
+    if (password && password.trim() !== '') {
+      staff.password = password;
+    }
 
     await staff.save();
 
