@@ -5,6 +5,7 @@ import Footer from './components/Footer';
 import LandingPage from './pages/LandingPage';
 import PublicRooms from './pages/PublicRooms';
 import TrackBooking from './pages/TrackBooking';
+import AboutUs from './pages/AboutUs';                 // <-- Naya import
 import LoginPage from './pages/LoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './components/DashboardLayout';
@@ -31,10 +32,11 @@ function App() {
           {/* Public Customer Facing Routes (Zero Login Required!) */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/rooms" element={<PublicRooms />} />
+          <Route path="/about" element={<AboutUs />} />             {/* <-- Naya Route */}
           <Route path="/my-booking" element={<TrackBooking />} />
           <Route path="/login" element={<LoginPage />} />
 
-          {/* Protected HMS Internal Dashboard Routes (Staff Credentials Required) */}
+          {/* Protected HMS Internal Dashboard Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route index element={<DashboardOverview />} />

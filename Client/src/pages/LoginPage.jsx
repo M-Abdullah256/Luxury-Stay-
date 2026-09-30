@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Hotel, Lock, Mail, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Hotel, Lock, Mail, ArrowRight, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -25,12 +26,6 @@ const LoginPage = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Demo Admin fast autofill helper for evaluation/testing
-  const fillAdmin = () => {
-    setEmail('admin@luxurystay.com');
-    setPassword('admin123456');
   };
 
   return (
@@ -120,7 +115,7 @@ const LoginPage = () => {
             </div>
           </div>
 
-          {/* Password Field */}
+          {/* Password Field with Functional Eye Button */}
           <div>
             <label style={{ display: 'block', color: '#cbd5e1', fontSize: '13px', marginBottom: '8px', fontWeight: '500' }}>
               Password
@@ -128,7 +123,7 @@ const LoginPage = () => {
             <div style={{ position: 'relative' }}>
               <Lock size={18} color="var(--primary-gold)" style={{ position: 'absolute', left: '14px', top: '13px' }} />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -137,13 +132,32 @@ const LoginPage = () => {
                   width: '100%',
                   background: 'rgba(15, 23, 42, 0.8)',
                   border: '1px solid var(--border-color)',
-                  padding: '12px 14px 12px 42px',
+                  padding: '12px 44px 12px 42px', // Right padding eye button ke liye
                   borderRadius: '10px',
                   color: '#fff',
                   fontSize: '14px',
                   outline: 'none'
                 }}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '14px',
+                  top: '12px',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: showPassword ? 'var(--primary-gold)' : '#94a3b8',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: 0
+                }}
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </div>
 
@@ -157,29 +171,6 @@ const LoginPage = () => {
             {loading ? 'Authenticating...' : <>Authenticate <ArrowRight size={18} /></>}
           </button>
         </form>
-
-        {/* Demo Fast Fill Button for Testing */}
-        <div style={{
-          marginTop: '24px',
-          paddingTop: '20px',
-          borderTop: '1px solid rgba(255,255,255,0.08)',
-          textAlign: 'center'
-        }}>
-          <button
-            type="button"
-            onClick={fillAdmin}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--primary-gold)',
-              fontSize: '12px',
-              cursor: 'pointer',
-              textDecoration: 'underline'
-            }}
-          >
-            Click here to Auto-Fill Super Admin Credentials
-          </button>
-        </div>
       </div>
     </div>
   );

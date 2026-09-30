@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Hotel, KeyRound, Menu, X, PhoneCall, Search } from 'lucide-react';
+import { Hotel, KeyRound, Menu, X, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
@@ -54,10 +54,11 @@ const Navbar = () => {
           </div>
         </Link>
 
-        {/* Desktop Guest Links (No Login Required) */}
+        {/* Desktop Guest Links */}
         <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }} className="nav-desktop-links">
           <Link to="/" style={linkStyle}>Home</Link>
           <Link to="/rooms" style={linkStyle}>Suites & Rooms</Link>
+          <Link to="/about" style={linkStyle}>About Us</Link>
           <Link to="/my-booking" style={{ ...linkStyle, color: 'var(--primary-gold)', display: 'flex', alignItems: 'center', gap: '4px' }}>
             <Search size={14} /> Track Booking
           </Link>
@@ -85,7 +86,7 @@ const Navbar = () => {
             </button>
           )}
 
-          {/* Mobile hamburger */}
+          {/* Mobile toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex' }}
@@ -110,6 +111,7 @@ const Navbar = () => {
         }}>
           <Link to="/" onClick={() => setMobileMenuOpen(false)} style={linkStyle}>Home</Link>
           <Link to="/rooms" onClick={() => setMobileMenuOpen(false)} style={linkStyle}>Suites & Rooms</Link>
+          <Link to="/about" onClick={() => setMobileMenuOpen(false)} style={linkStyle}>About Us</Link>
           <Link to="/my-booking" onClick={() => setMobileMenuOpen(false)} style={{ ...linkStyle, color: 'var(--primary-gold)' }}>Track My Booking</Link>
         </div>
       )}
