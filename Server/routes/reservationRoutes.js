@@ -8,11 +8,12 @@ const {
 } = require('../controllers/reservationController');
 const { protect } = require('../middleware/authMiddleware');
 
-router.use(protect); // All reservation routes require login
-
-router.get('/', getAllReservations);
+// PUBLIC ROUTE: Aam mehmaan website se online room book kar sake (SRS Req)
 router.post('/', createReservation);
-router.patch('/:id/check-in', checkIn);
-router.patch('/:id/check-out', checkOut);
+
+// PROTECTED ROUTES: Sirf Staff hi check-in, check-out aur saari bookings dekh sake
+router.get('/', protect, getAllReservations);
+router.patch('/:id/check-in', protect, checkIn);
+router.patch('/:id/check-out', protect, checkOut);
 
 module.exports = router;

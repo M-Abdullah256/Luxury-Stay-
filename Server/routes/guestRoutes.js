@@ -8,11 +8,12 @@ const {
 } = require('../controllers/guestController');
 const { protect } = require('../middleware/authMiddleware');
 
-router.use(protect); // All guest routes require login
-
-router.get('/', getAllGuests);
-router.get('/:id', getGuestById);
+// PUBLIC ROUTE: Mehmaan website se apni profile create kar sake
 router.post('/', createGuest);
-router.put('/:id', updateGuest);
+
+// PROTECTED ROUTES: Sirf logged-in Staff hi guests ki list dekh sake ya edit kar sake
+router.get('/', protect, getAllGuests);
+router.get('/:id', protect, getGuestById);
+router.put('/:id', protect, updateGuest);
 
 module.exports = router;
