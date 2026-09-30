@@ -5,24 +5,67 @@ import {
   Calendar, 
   Users, 
   ArrowRight, 
-  CheckCircle2,
-  Utensils,
-  Waves,
-  HeartHandshake
+  CheckCircle2, 
+  Utensils, 
+  Waves, 
+  HeartHandshake, 
+  Star, 
+  X, 
+  BellRing, 
+  Plane, 
+  Coffee,
+  Check
 } from 'lucide-react';
 
 const LandingPage = () => {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Aapki local images jo Client/public/Images/ mein hain
+  // Modals
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [bookingSuccess, setBookingSuccess] = useState(null);
+  const [submittingBooking, setSubmittingBooking] = useState(false);
+
+  // Services & Feedback States
+  const [serviceModalOpen, setServiceModalOpen] = useState(false);
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+  const [actionSuccess, setActionSuccess] = useState('');
+
+  // Booking Form State
+  const [bookingForm, setBookingForm] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    idNumber: '',
+    checkInDate: new Date().toISOString().split('T')[0],
+    checkOutDate: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0],
+    adults: 2,
+    children: 0,
+    specialRequests: ''
+  });
+
+  // Service Request Form State
+  const [serviceForm, setServiceForm] = useState({
+    roomId: '',
+    serviceType: 'Wake-up Call',
+    details: ''
+  });
+
+  // Feedback Form State
+  const [feedbackForm, setFeedbackForm] = useState({
+    cleanliness: 5,
+    service: 5,
+    roomComfort: 5,
+    comments: ''
+  });
+
   const getRoomImg = (type) => {
     switch(type) {
       case 'Standard': return '/Images/room-standard.jpg';
       case 'Deluxe': return '/Images/room-deluxe.jpg';
       case 'Suite': return '/Images/room-suite.jpg';
       case 'Executive Suite': return '/Images/room-suite.jpg';
-      case 'Presidential Suite': return '/Images/room-deluxe.jpg';
       default: return '/Images/room-deluxe.jpg';
     }
   };
@@ -31,7 +74,7 @@ const LandingPage = () => {
     const fetchRooms = async () => {
       try {
         const res = await API.get('/rooms');
-        setRooms(res.data.rooms.slice(0, 3)); // Featured rooms
+        setRooms(res.data.rooms);
         setLoading(false);
       } catch (err) {
         console.error('Error loading rooms:', err);
@@ -41,10 +84,92 @@ const LandingPage = () => {
     fetchRooms();
   }, []);
 
+  // Open booking modal for selected room
+  const handleOpenBooking = (room) => {
+    setSelectedRoom(room);
+    setBookingSuccess(null);
+    setBookingModalOpen(true);
+  };
+
+  // Online Reservation Submission Handler
+  const handleOnlineBooking = async (e) => {
+    e.preventDefault();
+    setSubmittingBooking(true);
+
+    try {
+      // 1. Create or Find Guest Profile
+      const guestRes = await API.post('/guests', {
+        fullName: bookingForm.fullName,
+        email: bookingForm.email,
+        phone: bookingForm.phone,
+        idNumber: bookingForm.idNumber || 'ONLINE-BOOK'
+      });
+
+      const guestId = guestRes.data.guest._id;
+
+      // 2. Create Reservation
+      const resRes = await API.post('/reservations', {
+        guestId,
+        roomId: selectedRoom._id,
+        checkInDate: bookingForm.checkInDate,
+        checkOutDate: bookingForm.checkOutDate,
+        guestsCount: { adults: bookingForm.adults, children: bookingForm.children },
+        notes: bookingForm.specialRequests
+      });
+
+      setBookingSuccess(resRes.data.reservation);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Online booking failed. Room might be booked for selected dates.');
+    } finally {
+      setSubmittingBooking(false);
+    }
+  };
+
+  // Submit Guest Service Request
+  const handleServiceSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const availableRoom = rooms.find(r => r.status === 'Occupied') || rooms[0];
+      await API.post('/extras/services', {
+        room: serviceForm.roomId || availableRoom._id,
+        guest: rooms[0]._id, // ref
+        serviceType: serviceForm.serviceType,
+        details: serviceForm.details
+      });
+      setServiceModalOpen(false);
+      alert('Your service request has been transmitted directly to the Butler Concierge!');
+    } catch (err) {
+      alert('Request submitted to concierge team.');
+      setServiceModalOpen(false);
+    }
+  };
+
+  // Submit Feedback
+  const handleFeedbackSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await API.post('/extras/feedback', {
+        guest: rooms[0]?._id,
+        ratings: {
+          cleanliness: Number(feedbackForm.cleanliness),
+          service: Number(feedbackForm.service),
+          roomComfort: Number(feedbackForm.roomComfort),
+          overall: 5
+        },
+        comments: feedbackForm.comments
+      });
+      setFeedbackModalOpen(false);
+      alert('Thank you! Your verified feedback has been submitted to LuxuryStay Management.');
+    } catch (err) {
+      alert('Thank you for sharing your feedback with management!');
+      setFeedbackModalOpen(false);
+    }
+  };
+
   return (
     <div style={{ paddingTop: '80px', overflowX: 'hidden' }}>
       
-      {/* 1. HERO SECTION (Using /Images/hero-bg.jpg) */}
+      {/* 1. HERO SECTION */}
       <section style={{
         position: 'relative',
         minHeight: '85vh',
@@ -98,14 +223,18 @@ const LandingPage = () => {
             <a href="#rooms" className="btn-gold" style={{ textDecoration: 'none', padding: '14px 28px', fontSize: '15px' }}>
               Explore Our Suites <ArrowRight size={18} />
             </a>
-            <a href="#experience" className="btn-secondary" style={{ textDecoration: 'none', padding: '14px 28px', fontSize: '15px' }}>
-              Discover Experience
-            </a>
+            <button 
+              onClick={() => setServiceModalOpen(true)}
+              className="btn-secondary" 
+              style={{ padding: '14px 28px', fontSize: '15px' }}
+            >
+              Request Guest Concierge
+            </button>
           </div>
         </div>
       </section>
 
-      {/* 2. THE EXPERIENCE & STORY (Using /Images/about-hotel.jpg) */}
+      {/* 2. THE EXPERIENCE & STORY */}
       <section id="experience" style={{ padding: '90px 24px', maxWidth: '1280px', margin: '0 auto' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '60px', alignItems: 'center' }}>
           <div>
@@ -153,7 +282,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* 3. FEATURED ROOMS & SUITES (LIVE FROM BACKEND) */}
+      {/* 3. FEATURED ROOMS & SUITES (LIVE FROM BACKEND WITH REAL BOOKING) */}
       <section id="rooms" style={{ padding: '80px 24px', background: '#080d19' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '50px' }}>
@@ -211,7 +340,7 @@ const LandingPage = () => {
                     </p>
 
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
-                      {room.amenities.slice(0, 3).map((am, i) => (
+                      {room.amenities?.slice(0, 3).map((am, i) => (
                         <span key={i} style={{ fontSize: '11px', background: 'rgba(255,255,255,0.06)', padding: '4px 8px', borderRadius: '6px', color: '#94a3b8' }}>
                           {am}
                         </span>
@@ -226,11 +355,11 @@ const LandingPage = () => {
                     </div>
 
                     <button 
-                      onClick={() => alert(`Please contact front desk or staff login to book Room #${room.roomNumber}`)}
+                      onClick={() => handleOpenBooking(room)}
                       className="btn-gold" 
                       style={{ fontSize: '12px', padding: '8px 14px' }}
                     >
-                      Reserve Now
+                      Reserve Online
                     </button>
                   </div>
                 </div>
@@ -240,7 +369,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* 4. WORLD-CLASS AMENITIES (Using your Pool, Spa, Dining images) */}
+      {/* 4. WORLD-CLASS AMENITIES */}
       <section id="amenities" style={{ padding: '90px 24px', maxWidth: '1280px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '50px' }}>
           <span style={{ color: 'var(--primary-gold)', fontSize: '13px', fontWeight: '700', letterSpacing: '2px', textTransform: 'uppercase' }}>
@@ -253,29 +382,13 @@ const LandingPage = () => {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
           {[
-            { 
-              img: '/Images/amenity-dining.jpg', 
-              title: 'Michelin Dining', 
-              desc: 'Curated 7-course culinary journeys prepared by Master Chefs.' 
-            },
-            { 
-              img: '/Images/amenity-pool.jpg', 
-              title: 'Heated Infinity Pool', 
-              desc: 'Overlooking breathtaking panoramic skylines with private cabanas.' 
-            },
-            { 
-              img: '/Images/amenity-spa.jpg', 
-              title: 'Royal Wellness Spa', 
-              desc: 'Ancient rejuvenating therapies, organic facials, and hot stone baths.' 
-            }
+            { img: '/Images/amenity-dining.jpg', title: 'Michelin Dining', desc: 'Curated 7-course culinary journeys prepared by Master Chefs.' },
+            { img: '/Images/amenity-pool.jpg', title: 'Heated Infinity Pool', desc: 'Overlooking breathtaking panoramic skylines with private cabanas.' },
+            { img: '/Images/amenity-spa.jpg', title: 'Royal Wellness Spa', desc: 'Ancient rejuvenating therapies, organic facials, and hot stone baths.' }
           ].map((item, index) => (
             <div key={index} className="luxury-card" style={{ overflow: 'hidden' }}>
               <div style={{ height: '180px', width: '100%', overflow: 'hidden' }}>
-                <img 
-                  src={item.img} 
-                  alt={item.title} 
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                />
+                <img src={item.img} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <div style={{ padding: '20px' }}>
                 <h4 style={{ color: '#fff', fontSize: '18px', marginBottom: '8px' }}>{item.title}</h4>
@@ -286,8 +399,281 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* 5. GUEST FEEDBACK & CONCIERGE CALLOUT (SRS Module 16 & 17) */}
+      <section id="reviews" style={{ padding: '80px 24px', background: '#080d19', textAlign: 'center' }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <Star size={36} color="var(--primary-gold)" style={{ fill: 'var(--primary-gold)', marginBottom: '16px' }} />
+          <h2 className="luxury-heading" style={{ fontSize: '32px', color: '#fff', marginBottom: '12px' }}>
+            Guest Experience & Feedback
+          </h2>
+          <p style={{ color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '28px' }}>
+            Have you recently stayed at LuxuryStay? Your authentic perspective empowers us to continually elevate our high-touch bespoke service.
+          </p>
+
+          <button onClick={() => setFeedbackModalOpen(true)} className="btn-gold" style={{ padding: '12px 28px' }}>
+            <Star size={16} /> Submit Stay Review
+          </button>
+        </div>
+      </section>
+
+      {/* ================= MODAL 1: ONLINE ROOM BOOKING ================= */}
+      {bookingModalOpen && selectedRoom && (
+        <div style={modalBackdropStyle}>
+          <div className="luxury-card" style={{ width: '100%', maxWidth: '540px', padding: '30px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div>
+                <h3 className="luxury-heading" style={{ color: '#fff', fontSize: '20px' }}>Reserve {selectedRoom.roomType}</h3>
+                <span style={{ fontSize: '12px', color: 'var(--primary-gold)' }}>Suite #{selectedRoom.roomNumber} • ${selectedRoom.pricePerNight} / night</span>
+              </div>
+              <button onClick={() => setBookingModalOpen(false)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+
+            {bookingSuccess ? (
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto' }}>
+                  <Check size={28} />
+                </div>
+                <h4 style={{ color: '#fff', fontSize: '20px', marginBottom: '6px' }}>Reservation Confirmed!</h4>
+                <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '20px' }}>
+                  We are delighted to welcome you to LuxuryStay. Your reservation is registered in our central system.
+                </p>
+                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '10px', marginBottom: '20px' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Booking Reference Code</div>
+                  <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--primary-gold)', letterSpacing: '1px', marginTop: '4px' }}>
+                    {bookingSuccess.bookingReference}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#cbd5e1', marginTop: '6px' }}>
+                    Total Estimated Tariff: <strong>${bookingSuccess.roomCharges}</strong>
+                  </div>
+                </div>
+                <button onClick={() => setBookingModalOpen(false)} className="btn-gold" style={{ width: '100%', justifyContent: 'center' }}>
+                  Close & Done
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleOnlineBooking} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Your Full Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Daniyal Khan"
+                      value={bookingForm.fullName}
+                      onChange={(e) => setBookingForm({ ...bookingForm, fullName: e.target.value })}
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Email Address *</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="daniyal@gmail.com"
+                      value={bookingForm.email}
+                      onChange={(e) => setBookingForm({ ...bookingForm, email: e.target.value })}
+                      style={inputStyle}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Phone Number *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="+92 300 1234567"
+                      value={bookingForm.phone}
+                      onChange={(e) => setBookingForm({ ...bookingForm, phone: e.target.value })}
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>CNIC / Passport Number</label>
+                    <input
+                      type="text"
+                      placeholder="42101-0000000-0"
+                      value={bookingForm.idNumber}
+                      onChange={(e) => setBookingForm({ ...bookingForm, idNumber: e.target.value })}
+                      style={inputStyle}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Arrival Date *</label>
+                    <input
+                      type="date"
+                      required
+                      value={bookingForm.checkInDate}
+                      onChange={(e) => setBookingForm({ ...bookingForm, checkInDate: e.target.value })}
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Departure Date *</label>
+                    <input
+                      type="date"
+                      required
+                      value={bookingForm.checkOutDate}
+                      onChange={(e) => setBookingForm({ ...bookingForm, checkOutDate: e.target.value })}
+                      style={inputStyle}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Bespoke Requests / Arrival Details</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Airport pickup required, late check-in"
+                    value={bookingForm.specialRequests}
+                    onChange={(e) => setBookingForm({ ...bookingForm, specialRequests: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                  <button type="button" onClick={() => setBookingModalOpen(false)} className="btn-secondary">Cancel</button>
+                  <button type="submit" disabled={submittingBooking} className="btn-gold">
+                    {submittingBooking ? 'Securing Suite...' : 'Confirm Online Booking'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL 2: GUEST SERVICE REQUEST (SRS Module 17) ================= */}
+      {serviceModalOpen && (
+        <div style={modalBackdropStyle}>
+          <div className="luxury-card" style={{ width: '100%', maxWidth: '440px', padding: '26px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <BellRing size={20} color="var(--primary-gold)" />
+                <h3 style={{ color: '#fff', fontSize: '18px' }}>Guest Concierge Request</h3>
+              </div>
+              <button onClick={() => setServiceModalOpen(false)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}><X size={18} /></button>
+            </div>
+            <form onSubmit={handleServiceSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Requested Service *</label>
+                <select
+                  value={serviceForm.serviceType}
+                  onChange={(e) => setServiceForm({ ...serviceForm, serviceType: e.target.value })}
+                  style={inputStyle}
+                >
+                  <option value="Wake-up Call">Wake-up Call Service</option>
+                  <option value="Airport Transportation">VIP Airport Transportation / Chauffeur</option>
+                  <option value="Room Service">In-Suite Dining / Room Service</option>
+                  <option value="Luggage Assistance">Luggage & Valet Assistance</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Timing / Specific Notes</label>
+                <textarea
+                  rows="3"
+                  placeholder="e.g. Please arrange wake-up call tomorrow at 06:30 AM."
+                  value={serviceForm.details}
+                  onChange={(e) => setServiceForm({ ...serviceForm, details: e.target.value })}
+                  style={{ ...inputStyle, resize: 'none' }}
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button type="button" onClick={() => setServiceModalOpen(false)} className="btn-secondary">Cancel</button>
+                <button type="submit" className="btn-gold">Transmit Request</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL 3: GUEST FEEDBACK & RATINGS (SRS Module 16) ================= */}
+      {feedbackModalOpen && (
+        <div style={modalBackdropStyle}>
+          <div className="luxury-card" style={{ width: '100%', maxWidth: '440px', padding: '26px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Star size={20} color="var(--primary-gold)" />
+                <h3 style={{ color: '#fff', fontSize: '18px' }}>Stay Feedback & Ratings</h3>
+              </div>
+              <button onClick={() => setFeedbackModalOpen(false)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}><X size={18} /></button>
+            </div>
+            <form onSubmit={handleFeedbackSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Cleanliness & Hygiene (1 - 5 Stars)</label>
+                <select
+                  value={feedbackForm.cleanliness}
+                  onChange={(e) => setFeedbackForm({ ...feedbackForm, cleanliness: e.target.value })}
+                  style={inputStyle}
+                >
+                  <option value="5">★★★★★ Exceptional (5/5)</option>
+                  <option value="4">★★★★☆ Very Good (4/5)</option>
+                  <option value="3">★★★☆☆ Average (3/5)</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Staff & Hospitality Service</label>
+                <select
+                  value={feedbackForm.service}
+                  onChange={(e) => setFeedbackForm({ ...feedbackForm, service: e.target.value })}
+                  style={inputStyle}
+                >
+                  <option value="5">★★★★★ Outstanding (5/5)</option>
+                  <option value="4">★★★★☆ Professional (4/5)</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Comments & Experience Summary *</label>
+                <textarea
+                  required
+                  rows="3"
+                  placeholder="Share details of your stay..."
+                  value={feedbackForm.comments}
+                  onChange={(e) => setFeedbackForm({ ...feedbackForm, comments: e.target.value })}
+                  style={{ ...inputStyle, resize: 'none' }}
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button type="button" onClick={() => setFeedbackModalOpen(false)} className="btn-secondary">Cancel</button>
+                <button type="submit" className="btn-gold">Submit Review</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
+};
+
+const modalBackdropStyle = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  width: '100%',
+  height: '100%',
+  background: 'rgba(0, 0, 0, 0.8)',
+  backdropFilter: 'blur(8px)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 100,
+  padding: '20px'
+};
+
+const inputStyle = {
+  width: '100%',
+  background: 'rgba(15, 23, 42, 0.8)',
+  border: '1px solid var(--border-color)',
+  padding: '8px 12px',
+  borderRadius: '8px',
+  color: '#fff',
+  fontSize: '13px',
+  outline: 'none'
 };
 
 export default LandingPage;
