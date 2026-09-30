@@ -6,12 +6,8 @@ import {
   Search, 
   Key, 
   LogOut, 
-  UserCheck, 
-  Clock, 
   X, 
-  CheckCircle2, 
-  AlertCircle,
-  BedDouble
+  CheckCircle2
 } from 'lucide-react';
 
 const Reservations = () => {
@@ -22,22 +18,25 @@ const Reservations = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
   
+  // Today's date string
+  const todayStr = new Date().toISOString().split('T')[0];
+
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Booking Form State
+  // Booking Form State with Today Default
   const [formData, setFormData] = useState({
-    guestMode: 'existing', // 'existing' or 'new'
+    guestMode: 'existing',
     guestId: '',
     newGuestName: '',
     newGuestEmail: '',
     newGuestPhone: '',
     newGuestIdNumber: '',
     roomId: '',
-    checkInDate: new Date().toISOString().split('T')[0],
-    checkOutDate: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0], // 2 days ahead
+    checkInDate: todayStr,
+    checkOutDate: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0],
     adults: 2,
     children: 0,
     notes: 'Airport pickup requested'
@@ -65,29 +64,29 @@ const Reservations = () => {
     fetchData();
   }, []);
 
-  // AUTOMATED CHECK-IN (Room becomes Occupied)
+  // Automated Check-In
   const handleCheckIn = async (reservationId, roomNumber) => {
     if (!window.confirm(`Issue room key and Check-In guest for Room #${roomNumber}?`)) return;
     try {
       await API.patch(`/reservations/${reservationId}/check-in`);
-      fetchData(); // Refresh list
+      fetchData();
     } catch (err) {
       alert(err.response?.data?.message || 'Check-in failed');
     }
   };
 
-  // AUTOMATED CHECK-OUT (Room automatically becomes Cleaning)
+  // Automated Check-Out
   const handleCheckOut = async (reservationId, roomNumber) => {
     if (!window.confirm(`Finalize stay and Check-Out Room #${roomNumber}? Room will be sent to Cleaning.`)) return;
     try {
       await API.patch(`/reservations/${reservationId}/check-out`);
-      fetchData(); // Refresh list
+      fetchData();
     } catch (err) {
       alert(err.response?.data?.message || 'Check-out failed');
     }
   };
 
-  // CREATE RESERVATION HANDLER
+  // Create Reservation Handler
   const handleCreateReservation = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -96,7 +95,6 @@ const Reservations = () => {
     try {
       let finalGuestId = formData.guestId;
 
-      // Agar new guest select kiya hai to pehle guest profile create karo
       if (formData.guestMode === 'new') {
         const guestRes = await API.post('/guests', {
           fullName: formData.newGuestName,
@@ -121,7 +119,7 @@ const Reservations = () => {
       });
 
       setIsModalOpen(false);
-      fetchData(); // Refresh
+      fetchData();
     } catch (err) {
       setErrorMsg(err.response?.data?.message || err.message || 'Failed to create reservation');
     } finally {
@@ -129,7 +127,6 @@ const Reservations = () => {
     }
   };
 
-  // Filtered Reservations
   const filteredReservations = reservations.filter((r) => {
     const matchesSearch = 
       r.bookingReference?.toLowerCase().includes(search.toLowerCase()) ||
@@ -234,44 +231,31 @@ const Reservations = () => {
             ) : (
               filteredReservations.map((res) => (
                 <tr key={res._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                  {/* Reference */}
                   <td style={{ padding: '14px', fontWeight: '600', color: 'var(--primary-gold)' }}>
                     {res.bookingReference}
                   </td>
-
-                  {/* Guest */}
                   <td style={{ padding: '14px' }}>
                     <div style={{ color: '#fff', fontWeight: '600' }}>{res.guest?.fullName || 'Walk-in Guest'}</div>
                     <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>{res.guest?.phone}</div>
                   </td>
-
-                  {/* Room */}
                   <td style={{ padding: '14px' }}>
                     <div style={{ color: '#fff', fontWeight: '500' }}>Room #{res.room?.roomNumber}</div>
                     <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>{res.room?.roomType}</div>
                   </td>
-
-                  {/* Stay Dates */}
                   <td style={{ padding: '14px', color: '#cbd5e1' }}>
                     <div>In: {new Date(res.checkInDate).toLocaleDateString()}</div>
                     <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>
                       Out: {new Date(res.checkOutDate).toLocaleDateString()}
                     </div>
                   </td>
-
-                  {/* Charges */}
                   <td style={{ padding: '14px', fontWeight: '700', color: '#fff' }}>
                     ${res.roomCharges}
                   </td>
-
-                  {/* Status Badge */}
                   <td style={{ padding: '14px' }}>
                     <span className={`badge badge-${res.status === 'Checked-In' ? 'occupied' : res.status === 'Confirmed' ? 'available' : 'reserved'}`}>
                       ● {res.status}
                     </span>
                   </td>
-
-                  {/* Actions (SRS Smooth Check-in & Check-out) */}
                   <td style={{ padding: '14px', textAlign: 'center' }}>
                     {res.status === 'Confirmed' && (
                       <button
@@ -316,7 +300,7 @@ const Reservations = () => {
         </table>
       </div>
 
-      {/* CREATE RESERVATION MODAL */}
+      {/* CREATE RESERVATION MODAL WITH PAST DATE BLOCKING */}
       {isModalOpen && (
         <div style={{
           position: 'fixed',
@@ -473,15 +457,23 @@ const Reservations = () => {
                 </select>
               </div>
 
-              {/* Dates */}
+              {/* DATES WITH BLOCKING */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Check-In Date *</label>
                   <input
                     type="date"
                     required
+                    min={todayStr}
                     value={formData.checkInDate}
-                    onChange={(e) => setFormData({ ...formData, checkInDate: e.target.value })}
+                    onChange={(e) => {
+                      const newCheckIn = e.target.value;
+                      setFormData((prev) => ({
+                        ...prev,
+                        checkInDate: newCheckIn,
+                        checkOutDate: prev.checkOutDate <= newCheckIn ? newCheckIn : prev.checkOutDate
+                      }));
+                    }}
                     style={inputStyle}
                   />
                 </div>
@@ -490,6 +482,7 @@ const Reservations = () => {
                   <input
                     type="date"
                     required
+                    min={formData.checkInDate || todayStr}
                     value={formData.checkOutDate}
                     onChange={(e) => setFormData({ ...formData, checkOutDate: e.target.value })}
                     style={inputStyle}
@@ -497,7 +490,7 @@ const Reservations = () => {
                 </div>
               </div>
 
-              {/* Special Requests / Notes */}
+              {/* Special Requests */}
               <div>
                 <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Special Requests / Notes</label>
                 <input
@@ -509,7 +502,6 @@ const Reservations = () => {
                 />
               </div>
 
-              {/* Action Buttons */}
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '10px' }}>
                 <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary">
                   Cancel

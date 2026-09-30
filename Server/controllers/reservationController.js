@@ -26,9 +26,9 @@ exports.getAllReservations = async (req, res) => {
   }
 };
 
-// @desc    Create new booking / reservation
+// @desc    Create new booking / reservation with Date Validation
 // @route   POST /api/reservations
-// @access  Private (Staff only)
+// @access  Private (Staff only) / Public
 exports.createReservation = async (req, res) => {
   try {
     const { guestId, roomId, checkInDate, checkOutDate, guestsCount, notes } = req.body;
@@ -36,14 +36,25 @@ exports.createReservation = async (req, res) => {
     const checkIn = new Date(checkInDate);
     const checkOut = new Date(checkOutDate);
 
+    // 1. Check-out must be after check-in
     if (checkIn >= checkOut) {
       return res.status(400).json({
         success: false,
-        message: 'Check-out date must be after check-in date'
+        message: 'Check-out date must be strictly after check-in date'
       });
     }
 
-    // Check if room exists and is not under maintenance
+    // 2. Block Past Dates (Cannot book in the past)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (checkIn < today) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot book reservations for past dates'
+      });
+    }
+
+    // 3. Check if room exists and is not under maintenance
     const room = await Room.findById(roomId);
     if (!room) {
       return res.status(404).json({ success: false, message: 'Room not found' });
@@ -56,7 +67,7 @@ exports.createReservation = async (req, res) => {
       });
     }
 
-    // Date Overlap Validation: check if already booked for these dates
+    // 4. Overlap Conflict Check
     const existingConflict = await Reservation.findOne({
       room: roomId,
       status: { $in: ['Confirmed', 'Checked-In'] },
@@ -72,8 +83,8 @@ exports.createReservation = async (req, res) => {
       });
     }
 
-    // Total nights & price calculation
-    const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+    // 5. Total charges calculation
+    const nights = Math.max(1, Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24)));
     const totalRoomCharges = nights * room.pricePerNight;
 
     const reservation = await Reservation.create({
@@ -81,9 +92,9 @@ exports.createReservation = async (req, res) => {
       room: roomId,
       checkInDate: checkIn,
       checkOutDate: checkOut,
-      guestsCount,
+      guestsCount: guestsCount || { adults: 2, children: 0 },
       roomCharges: totalRoomCharges,
-      notes
+      notes: notes || ''
     });
 
     res.status(201).json({
@@ -114,7 +125,6 @@ exports.checkIn = async (req, res) => {
       });
     }
 
-    // Update reservation
     reservation.status = 'Checked-In';
     reservation.actualCheckIn = new Date();
     reservation.keyCardIssued = true;
@@ -151,13 +161,12 @@ exports.checkOut = async (req, res) => {
       });
     }
 
-    // Update reservation
     reservation.status = 'Checked-Out';
     reservation.actualCheckOut = new Date();
     reservation.keyCardIssued = false;
     await reservation.save();
 
-    // Automatically mark Room as 'Cleaning' as required by SRS!
+    // Automatically mark Room as 'Cleaning' as required by SRS
     await Room.findByIdAndUpdate(reservation.room, { status: 'Cleaning' });
 
     res.status(200).json({

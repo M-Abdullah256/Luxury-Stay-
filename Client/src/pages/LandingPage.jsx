@@ -2,18 +2,11 @@ import React, { useState, useEffect } from 'react';
 import API from '../api/axios';
 import { 
   Sparkles, 
-  Calendar, 
-  Users, 
   ArrowRight, 
   CheckCircle2, 
-  Utensils, 
-  Waves, 
-  HeartHandshake, 
   Star, 
   X, 
   BellRing, 
-  Plane, 
-  Coffee,
   Check
 } from 'lucide-react';
 
@@ -30,15 +23,17 @@ const LandingPage = () => {
   // Services & Feedback States
   const [serviceModalOpen, setServiceModalOpen] = useState(false);
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
-  const [actionSuccess, setActionSuccess] = useState('');
 
-  // Booking Form State
+  // Today's date string in YYYY-MM-DD
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  // Booking Form State with Today Default
   const [bookingForm, setBookingForm] = useState({
     fullName: '',
     email: '',
     phone: '',
     idNumber: '',
-    checkInDate: new Date().toISOString().split('T')[0],
+    checkInDate: todayStr,
     checkOutDate: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0],
     adults: 2,
     children: 0,
@@ -84,20 +79,17 @@ const LandingPage = () => {
     fetchRooms();
   }, []);
 
-  // Open booking modal for selected room
   const handleOpenBooking = (room) => {
     setSelectedRoom(room);
     setBookingSuccess(null);
     setBookingModalOpen(true);
   };
 
-  // Online Reservation Submission Handler
   const handleOnlineBooking = async (e) => {
     e.preventDefault();
     setSubmittingBooking(true);
 
     try {
-      // 1. Create or Find Guest Profile
       const guestRes = await API.post('/guests', {
         fullName: bookingForm.fullName,
         email: bookingForm.email,
@@ -107,7 +99,6 @@ const LandingPage = () => {
 
       const guestId = guestRes.data.guest._id;
 
-      // 2. Create Reservation
       const resRes = await API.post('/reservations', {
         guestId,
         roomId: selectedRoom._id,
@@ -119,32 +110,30 @@ const LandingPage = () => {
 
       setBookingSuccess(resRes.data.reservation);
     } catch (err) {
-      alert(err.response?.data?.message || 'Online booking failed. Room might be booked for selected dates.');
+      alert(err.response?.data?.message || 'Online booking failed. Please verify dates.');
     } finally {
       setSubmittingBooking(false);
     }
   };
 
-  // Submit Guest Service Request
   const handleServiceSubmit = async (e) => {
     e.preventDefault();
     try {
-      const availableRoom = rooms.find(r => r.status === 'Occupied') || rooms[0];
+      const targetRoom = rooms[0];
       await API.post('/extras/services', {
-        room: serviceForm.roomId || availableRoom._id,
-        guest: rooms[0]._id, // ref
+        room: targetRoom?._id,
+        guest: targetRoom?._id,
         serviceType: serviceForm.serviceType,
         details: serviceForm.details
       });
       setServiceModalOpen(false);
-      alert('Your service request has been transmitted directly to the Butler Concierge!');
+      alert('Your concierge service request has been transmitted directly to staff!');
     } catch (err) {
-      alert('Request submitted to concierge team.');
+      alert('Service request submitted to concierge team.');
       setServiceModalOpen(false);
     }
   };
 
-  // Submit Feedback
   const handleFeedbackSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -282,7 +271,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* 3. FEATURED ROOMS & SUITES (LIVE FROM BACKEND WITH REAL BOOKING) */}
+      {/* 3. FEATURED ROOMS & SUITES */}
       <section id="rooms" style={{ padding: '80px 24px', background: '#080d19' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '50px' }}>
@@ -399,7 +388,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* 5. GUEST FEEDBACK & CONCIERGE CALLOUT (SRS Module 16 & 17) */}
+      {/* 5. GUEST FEEDBACK */}
       <section id="reviews" style={{ padding: '80px 24px', background: '#080d19', textAlign: 'center' }}>
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           <Star size={36} color="var(--primary-gold)" style={{ fill: 'var(--primary-gold)', marginBottom: '16px' }} />
@@ -416,7 +405,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ================= MODAL 1: ONLINE ROOM BOOKING ================= */}
+      {/* ================= MODAL 1: ONLINE ROOM BOOKING WITH PAST DATE BLOCKING ================= */}
       {bookingModalOpen && selectedRoom && (
         <div style={modalBackdropStyle}>
           <div className="luxury-card" style={{ width: '100%', maxWidth: '540px', padding: '30px', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -501,22 +490,36 @@ const LandingPage = () => {
                   </div>
                 </div>
 
+                {/* DATE SELECTORS WITH BLOCKING */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div>
-                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Arrival Date *</label>
+                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>
+                      Arrival Date *
+                    </label>
                     <input
                       type="date"
                       required
+                      min={todayStr}
                       value={bookingForm.checkInDate}
-                      onChange={(e) => setBookingForm({ ...bookingForm, checkInDate: e.target.value })}
+                      onChange={(e) => {
+                        const newCheckIn = e.target.value;
+                        setBookingForm((prev) => ({
+                          ...prev,
+                          checkInDate: newCheckIn,
+                          checkOutDate: prev.checkOutDate <= newCheckIn ? newCheckIn : prev.checkOutDate
+                        }));
+                      }}
                       style={inputStyle}
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Departure Date *</label>
+                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>
+                      Departure Date *
+                    </label>
                     <input
                       type="date"
                       required
+                      min={bookingForm.checkInDate || todayStr}
                       value={bookingForm.checkOutDate}
                       onChange={(e) => setBookingForm({ ...bookingForm, checkOutDate: e.target.value })}
                       style={inputStyle}
@@ -547,7 +550,7 @@ const LandingPage = () => {
         </div>
       )}
 
-      {/* ================= MODAL 2: GUEST SERVICE REQUEST (SRS Module 17) ================= */}
+      {/* ================= MODAL 2: GUEST SERVICE REQUEST ================= */}
       {serviceModalOpen && (
         <div style={modalBackdropStyle}>
           <div className="luxury-card" style={{ width: '100%', maxWidth: '440px', padding: '26px' }}>
@@ -591,7 +594,7 @@ const LandingPage = () => {
         </div>
       )}
 
-      {/* ================= MODAL 3: GUEST FEEDBACK & RATINGS (SRS Module 16) ================= */}
+      {/* ================= MODAL 3: GUEST FEEDBACK ================= */}
       {feedbackModalOpen && (
         <div style={modalBackdropStyle}>
           <div className="luxury-card" style={{ width: '100%', maxWidth: '440px', padding: '26px' }}>
