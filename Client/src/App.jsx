@@ -10,8 +10,10 @@ import DashboardOverview from './pages/DashboardOverview';
 import RoomsManagement from './pages/RoomsManagement';
 import Reservations from './pages/Reservations';
 import BillingInvoices from './pages/BillingInvoices';
-import HousekeepingPage from './pages/HousekeepingPage'; // <-- Naya import
-import MaintenancePage from './pages/MaintenancePage';   // <-- Naya import
+import HousekeepingPage from './pages/HousekeepingPage';
+import MaintenancePage from './pages/MaintenancePage';
+import GuestsList from './pages/GuestsList';             // <-- Naya import
+import StaffManagement from './pages/StaffManagement';     // <-- Naya import
 
 function App() {
   const location = useLocation();
@@ -34,8 +36,10 @@ function App() {
               <Route path="rooms" element={<RoomsManagement />} />
               <Route path="reservations" element={<Reservations />} />
               <Route path="billing" element={<BillingInvoices />} />
-              <Route path="housekeeping" element={<HousekeepingPage />} /> {/* <-- Naya route */}
-              <Route path="maintenance" element={<MaintenancePage />} />   {/* <-- Naya route */}
+              <Route path="housekeeping" element={<HousekeepingPage />} />
+              <Route path="maintenance" element={<MaintenancePage />} />
+              <Route path="guests" element={<GuestsList />} />           {/* <-- Naya route */}
+              <Route path="staff" element={<StaffManagement />} />       {/* <-- Naya route */}
             </Route>
           </Route>
         </Routes>
