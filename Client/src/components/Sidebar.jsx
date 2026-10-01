@@ -11,7 +11,8 @@ import {
   Wrench,
   Shield,
   Settings,
-  Hotel
+  Hotel,
+  BellRing
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -36,6 +37,12 @@ const Sidebar = () => {
       name: 'Reservations & Check-In',
       path: '/dashboard/reservations',
       icon: <CalendarCheck size={20} />,
+      roles: ['admin', 'manager', 'receptionist']
+    },
+       {
+      name: 'Concierge Requests',                         // <-- NAYA ITEM
+      path: '/dashboard/concierge',
+      icon: <BellRing size={20} />,
       roles: ['admin', 'manager', 'receptionist']
     },
     {

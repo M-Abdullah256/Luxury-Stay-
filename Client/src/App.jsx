@@ -18,6 +18,7 @@ import MaintenancePage from './pages/MaintenancePage';
 import GuestsList from './pages/GuestsList';
 import StaffManagement from './pages/StaffManagement';
 import SystemSettings from './pages/SystemSettings';
+import ConciergeRequests from './pages/ConciergeRequests'; // <-- Import karein
 
 function App() {
   const location = useLocation();
@@ -42,6 +43,7 @@ function App() {
               <Route index element={<DashboardOverview />} />
               <Route path="rooms" element={<RoomsManagement />} />
               <Route path="reservations" element={<Reservations />} />
+              <Route path="concierge" element={<ConciergeRequests />} />
               <Route path="billing" element={<BillingInvoices />} />
               <Route path="housekeeping" element={<HousekeepingPage />} />
               <Route path="maintenance" element={<MaintenancePage />} />

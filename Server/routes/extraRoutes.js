@@ -13,12 +13,12 @@ const {
 } = require('../controllers/extraController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-// PUBLIC ROUTES: Website par aane wale mehmaan feedback aur service request de sakein
+// PUBLIC ROUTES (Guests can view and submit reviews)
+router.get('/feedback', getAllFeedback); // <-- Public: taake website par reviews dikhein
 router.post('/feedback', createFeedback);
 router.post('/services', createServiceRequest);
 
-// PROTECTED ROUTES: Staff & Admin only
-router.get('/feedback', protect, getAllFeedback);
+// PROTECTED ROUTES (Staff Only)
 router.get('/services', protect, getAllServiceRequests);
 router.patch('/services/:id/status', protect, updateServiceStatus);
 

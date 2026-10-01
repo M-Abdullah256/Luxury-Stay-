@@ -3,12 +3,12 @@
 :root {
   --primary-gold: #c5a880;
   --primary-gold-hover: #b09166;
-  --dark-bg: #0f172a;
-  --card-bg: #1e293b;
-  --sidebar-bg: #0a0f1d;
+  --dark-bg: #070b14;
+  --card-bg: #0d1527;
+  --sidebar-bg: #050811;
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
-  --border-color: #334155;
+  --border-color: rgba(212, 175, 55, 0.2);
   --accent-blue: #38bdf8;
   --success-green: #10b981;
   --warning-amber: #f59e0b;
@@ -22,11 +22,23 @@
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
+/* ================= LUXURY AMBIENT BACKGROUND (NO MORE DEAD FLAT BLACK) ================= */
 body {
-  background-color: #0b1120;
-  color: var(--text-main);
   min-height: 100vh;
   overflow-x: hidden;
+  color: var(--text-main);
+  background-color: #070b14;
+  
+  /* Background Image with Ambient Glows */
+  background-image: 
+    radial-gradient(circle at 15% 20%, rgba(212, 175, 55, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 85% 60%, rgba(56, 189, 248, 0.08) 0%, transparent 45%),
+    linear-gradient(180deg, rgba(7, 11, 20, 0.75) 0%, rgba(5, 8, 17, 0.85) 100%),
+    url('/Images/luxury-bg-pattern.jpg');
+  background-attachment: fixed;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 /* Luxury Headings */
@@ -35,65 +47,77 @@ body {
   letter-spacing: 0.5px;
 }
 
-/* Glassmorphism Cards */
+/* ================= REFINED GLASSMORPHISM CARDS ================= */
 .luxury-card {
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  background: rgba(13, 21, 39, 0.75);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(212, 175, 55, 0.18);
+  border-radius: 18px;
+  box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.7);
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.luxury-card:hover {
+  border-color: rgba(212, 175, 55, 0.38);
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.85);
 }
 
 /* Status Badges */
 .badge {
   padding: 4px 12px;
   border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
+  fontSize: 11.5px;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  text-transform: capitalize;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.badge-available { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-.badge-occupied { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
-.badge-cleaning { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-.badge-maintenance { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3); }
-.badge-reserved { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+.badge-available { background: rgba(16, 185, 129, 0.18); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); }
+.badge-occupied { background: rgba(244, 63, 94, 0.18); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.35); }
+.badge-cleaning { background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); }
+.badge-maintenance { background: rgba(148, 163, 184, 0.18); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.35); }
+.badge-reserved { background: rgba(56, 189, 248, 0.18); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); }
 
 /* Buttons */
 .btn-gold {
-  background: linear-gradient(135deg, #c5a880 0%, #b09166 100%);
-  color: #0f172a;
-  font-weight: 600;
-  padding: 10px 20px;
-  border-radius: 10px;
+  background: linear-gradient(135deg, #d4af37 0%, #aa7c11 100%);
+  color: #070b14;
+  font-weight: 700;
+  padding: 10px 22px;
+  border-radius: 25px;
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.25);
 }
 
 .btn-gold:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(197, 168, 128, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
 }
 
 .btn-secondary {
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   color: var(--text-main);
   padding: 10px 20px;
-  border-radius: 10px;
+  border-radius: 25px;
   cursor: pointer;
   transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(212, 175, 55, 0.12);
+  border-color: rgba(212, 175, 55, 0.4);
+  color: #ffffff;
 }
 
 /* Custom Scrollbars */
@@ -102,9 +126,41 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0b1120;
+  background: #050811;
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #1e293b;
   border-radius: 3px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Responsive Navigation */
+@media (max-width: 768px) {
+  .nav-desktop {
+    display: none !important;
+  }
+  .nav-mobile-btn {
+    display: block !important;
+  }
+}
+
+/* ================= FIX NATIVE DATE PICKER ICON IN DARK THEME ================= */
+input[type="date"] {
+  color-scheme: dark;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(0.8) sepia(100%) saturate(300%) hue-rotate(5deg) brightness(1.2);
+  opacity: 0.9;
+  padding: 4px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  transform: scale(1.15);
+  opacity: 1;
 }
