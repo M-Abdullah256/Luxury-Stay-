@@ -3,6 +3,7 @@ const router = express.Router();
 const { getDashboardStats } = require('../controllers/dashboardController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-router.get('/stats', protect, authorize('admin', 'manager'), getDashboardStats);
+// Receptionist ko bhi live occupancy aur stats dekhne ki permission:
+router.get('/stats', protect, authorize('admin', 'manager', 'receptionist'), getDashboardStats);
 
 module.exports = router;

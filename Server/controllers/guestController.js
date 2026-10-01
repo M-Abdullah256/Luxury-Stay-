@@ -48,22 +48,44 @@ exports.getGuestById = async (req, res) => {
   }
 };
 
-// @desc    Create new guest profile
+// @desc    Create or Retrieve Existing Guest (Smart Returning Guest Handler)
 // @route   POST /api/guests
-// @access  Private (Staff only)
+// @access  Public / Staff
 exports.createGuest = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { fullName, email, phone, idNumber, idType, address, preferences } = req.body;
 
-    const existingGuest = await Guest.findOne({ email });
-    if (existingGuest) {
-      return res.status(400).json({
-        success: false,
-        message: 'A guest with this email already exists'
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Guest email is required' });
+    }
+
+    // Check agar mehmaan pehle se database mein mojood hai (Returning Guest)
+    let guest = await Guest.findOne({ email: email.toLowerCase().trim() });
+
+    if (guest) {
+      // Purane guest ki info update karein aur wahi profile return karein
+      if (fullName) guest.fullName = fullName;
+      if (phone) guest.phone = phone;
+      if (idNumber) guest.idNumber = idNumber;
+      await guest.save();
+
+      return res.status(200).json({
+        success: true,
+        message: 'Returning guest profile linked successfully',
+        guest
       });
     }
 
-    const guest = await Guest.create(req.body);
+    // Naya Guest profile banayein
+    guest = await Guest.create({
+      fullName,
+      email: email.toLowerCase().trim(),
+      phone,
+      idType: idType || 'National ID',
+      idNumber: idNumber || 'ONLINE-BOOK',
+      address,
+      preferences
+    });
 
     res.status(201).json({
       success: true,

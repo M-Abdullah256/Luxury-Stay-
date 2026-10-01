@@ -4,6 +4,7 @@ const {
   getHousekeepingTasks,
   createHousekeepingTask,
   completeCleaningTask,
+  quickCleanRoom,
   getMaintenanceIssues,
   reportMaintenanceIssue,
   resolveMaintenanceIssue
@@ -13,12 +14,13 @@ const { protect } = require('../middleware/authMiddleware');
 
 router.use(protect);
 
-// Housekeeping
+// Housekeeping Routes
 router.get('/housekeeping', getHousekeepingTasks);
 router.post('/housekeeping', createHousekeepingTask);
 router.patch('/housekeeping/:id/complete', completeCleaningTask);
+router.patch('/housekeeping/quick-clean/:roomId', quickCleanRoom); // <-- Naya Guaranteed Logger Route
 
-// Maintenance
+// Maintenance Routes
 router.get('/maintenance', getMaintenanceIssues);
 router.post('/maintenance', reportMaintenanceIssue);
 router.patch('/maintenance/:id/resolve', resolveMaintenanceIssue);

@@ -1,6 +1,7 @@
 const Reservation = require('../models/Reservation');
 const Room = require('../models/Room');
 const Guest = require('../models/Guest');
+const HousekeepingTask = require('../models/HousekeepingTask'); // <-- Housekeeping Task Model
 
 // @desc    Get all reservations
 // @route   GET /api/reservations
@@ -36,7 +37,6 @@ exports.createReservation = async (req, res) => {
     const checkIn = new Date(checkInDate);
     const checkOut = new Date(checkOutDate);
 
-    // 1. Check-out must be after check-in
     if (checkIn >= checkOut) {
       return res.status(400).json({
         success: false,
@@ -44,7 +44,6 @@ exports.createReservation = async (req, res) => {
       });
     }
 
-    // 2. Block Past Dates
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (checkIn < today) {
@@ -54,7 +53,6 @@ exports.createReservation = async (req, res) => {
       });
     }
 
-    // 3. Room status check
     const room = await Room.findById(roomId);
     if (!room) {
       return res.status(404).json({ success: false, message: 'Room not found' });
@@ -67,7 +65,6 @@ exports.createReservation = async (req, res) => {
       });
     }
 
-    // 4. Overlap Conflict Check
     const existingConflict = await Reservation.findOne({
       room: roomId,
       status: { $in: ['Confirmed', 'Checked-In'] },
@@ -83,7 +80,6 @@ exports.createReservation = async (req, res) => {
       });
     }
 
-    // 5. Total charges calculation
     const nights = Math.max(1, Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24)));
     const totalRoomCharges = nights * room.pricePerNight;
 
@@ -107,7 +103,7 @@ exports.createReservation = async (req, res) => {
   }
 };
 
-// @desc    Perform Guest Check-in (SRS Requirement: Automated Room Status Update)
+// @desc    Perform Guest Check-in (Automated Room Status: Occupied)
 // @route   PATCH /api/reservations/:id/check-in
 // @access  Private (Staff only)
 exports.checkIn = async (req, res) => {
@@ -142,7 +138,7 @@ exports.checkIn = async (req, res) => {
   }
 };
 
-// @desc    Perform Guest Check-out (SRS Requirement: Automated Room Status Update)
+// @desc    Perform Guest Check-out (FULLY AUTOMATED: Room ➔ Cleaning & Auto Housekeeping Task Generated!)
 // @route   PATCH /api/reservations/:id/check-out
 // @access  Private (Staff only)
 exports.checkOut = async (req, res) => {
@@ -165,11 +161,27 @@ exports.checkOut = async (req, res) => {
     reservation.keyCardIssued = false;
     await reservation.save();
 
+    // 1. Room automatically becomes 'Cleaning'
     await Room.findByIdAndUpdate(reservation.room, { status: 'Cleaning' });
+
+    // 2. AUTOMATIC HOUSEKEEPING TASK CREATION: Task list mein khud add hoga!
+    const existingTask = await HousekeepingTask.findOne({
+      room: reservation.room,
+      status: 'Pending'
+    });
+
+    if (!existingTask) {
+      await HousekeepingTask.create({
+        room: reservation.room,
+        taskType: 'Deep Clean',
+        priority: 'High',
+        status: 'Pending'
+      });
+    }
 
     res.status(200).json({
       success: true,
-      message: 'Guest checked-out successfully. Room status set to Cleaning.',
+      message: 'Guest checked-out successfully. Room status set to Cleaning and Housekeeping notified.',
       reservation
     });
   } catch (error) {
@@ -177,7 +189,7 @@ exports.checkOut = async (req, res) => {
   }
 };
 
-// @desc    Public Booking Lookup by Reference (SRS: No Login Required for Guests)
+// @desc    Public Booking Lookup by Reference
 // @route   GET /api/reservations/lookup/:reference
 // @access  Public
 exports.lookupReservation = async (req, res) => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import API from '../api/axios';
 import { 
   Sparkles, 
@@ -13,6 +13,10 @@ import {
 const LandingPage = () => {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Video Reference & Fade State
+  const videoRef = useRef(null);
+  const [isVideoVisible, setIsVideoVisible] = useState(true);
 
   // Modals
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
@@ -79,6 +83,30 @@ const LandingPage = () => {
     };
     fetchRooms();
   }, []);
+
+  // Video Fade Loop Logic
+  const handleVideoTimeUpdate = () => {
+    const video = videoRef.current;
+    if (!video || !video.duration) return;
+
+    // Akhri 1 second me video fade out ho jayegi
+    if (video.duration - video.currentTime <= 1.0) {
+      setIsVideoVisible(false);
+    }
+  };
+
+  const handleVideoEnded = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.currentTime = 0;
+    video.play();
+
+    // Restart hote hi video wapis fade in ho jayegi
+    setTimeout(() => {
+      setIsVideoVisible(true);
+    }, 100);
+  };
 
   const handleOpenBooking = (room) => {
     setSelectedRoom(room);
@@ -168,12 +196,44 @@ const LandingPage = () => {
         justifyContent: 'center',
         textAlign: 'center',
         padding: '60px 24px',
-        backgroundImage: `linear-gradient(rgba(11, 17, 32, 0.75), rgba(11, 17, 32, 0.9)), url('/Images/hero-bg.jpg')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed'
+        overflow: 'hidden',
+        backgroundColor: '#0b1120'
       }}>
-        <div style={{ maxWidth: '900px' }}>
+        {/* Background Video with Smooth Fade Effect */}
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          playsInline
+          onTimeUpdate={handleVideoTimeUpdate}
+          onEnded={handleVideoEnded}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            zIndex: 0,
+            opacity: isVideoVisible ? 1 : 0,
+            transition: 'opacity 1s ease-in-out'
+          }}
+        >
+          <source src="/Videos/hero-bg.mp4" type="video/mp4" />
+        </video>
+
+        {/* Gradient Overlay for Text Readability */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'linear-gradient(rgba(11, 17, 32, 0.75), rgba(11, 17, 32, 0.9))',
+          zIndex: 1
+        }} />
+
+        <div style={{ maxWidth: '900px', position: 'relative', zIndex: 2 }}>
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',

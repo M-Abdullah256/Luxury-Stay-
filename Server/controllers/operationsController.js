@@ -2,14 +2,14 @@ const HousekeepingTask = require('../models/HousekeepingTask');
 const Maintenance = require('../models/Maintenance');
 const Room = require('../models/Room');
 
-// --- HOUSEKEEPING ---
+// ===================== HOUSEKEEPING =====================
 
 exports.getHousekeepingTasks = async (req, res) => {
   try {
     const tasks = await HousekeepingTask.find()
       .populate('room', 'roomNumber roomType floor status')
       .populate('assignedTo', 'name email')
-      .sort({ createdAt: -1 });
+      .sort({ updatedAt: -1, createdAt: -1 });
 
     res.status(200).json({ success: true, count: tasks.length, tasks });
   } catch (error) {
@@ -23,14 +23,52 @@ exports.createHousekeepingTask = async (req, res) => {
     const task = await HousekeepingTask.create({
       room: roomId,
       assignedTo,
-      taskType,
-      priority
+      taskType: taskType || 'Deep Clean',
+      priority: priority || 'High'
     });
 
-    // Mark room status to 'Cleaning'
     await Room.findByIdAndUpdate(roomId, { status: 'Cleaning' });
 
     res.status(201).json({ success: true, message: 'Cleaning task created', task });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// FAST CLEAN & GUARANTEED HISTORY LOGGER (With Exact Valid Enum)
+exports.quickCleanRoom = async (req, res) => {
+  try {
+    const { roomId } = req.params;
+
+    // 1. Room ko Available mark karein
+    await Room.findByIdAndUpdate(roomId, {
+      status: 'Available',
+      lastCleanedAt: new Date()
+    });
+
+    // 2. Check agar pehle se pending task mojood hai
+    let task = await HousekeepingTask.findOne({ room: roomId, status: 'Pending' });
+
+    if (task) {
+      task.status = 'Completed';
+      task.completedAt = new Date();
+      await task.save();
+    } else {
+      // Valid enum 'Deep Clean' use kiya hai
+      task = await HousekeepingTask.create({
+        room: roomId,
+        taskType: 'Deep Clean',
+        priority: 'High',
+        status: 'Completed',
+        completedAt: new Date()
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Room sanitized and recorded in history log',
+      task
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -47,7 +85,6 @@ exports.completeCleaningTask = async (req, res) => {
     task.completedAt = new Date();
     await task.save();
 
-    // SRS Requirement: Once cleaned, Room automatically becomes Available!
     await Room.findByIdAndUpdate(task.room, {
       status: 'Available',
       lastCleanedAt: new Date()
@@ -63,7 +100,7 @@ exports.completeCleaningTask = async (req, res) => {
   }
 };
 
-// --- MAINTENANCE ---
+// ===================== MAINTENANCE =====================
 
 exports.getMaintenanceIssues = async (req, res) => {
   try {
@@ -89,7 +126,6 @@ exports.reportMaintenanceIssue = async (req, res) => {
       reportedBy
     });
 
-    // Mark Room status to 'Maintenance'
     await Room.findByIdAndUpdate(roomId, { status: 'Maintenance' });
 
     res.status(201).json({ success: true, message: 'Issue reported', issue });
@@ -109,7 +145,6 @@ exports.resolveMaintenanceIssue = async (req, res) => {
     issue.resolvedAt = new Date();
     await issue.save();
 
-    // Mark room back to Available
     await Room.findByIdAndUpdate(issue.room, { status: 'Available' });
 
     res.status(200).json({
