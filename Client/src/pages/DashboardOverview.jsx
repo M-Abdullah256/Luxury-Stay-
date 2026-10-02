@@ -11,10 +11,14 @@ import {
   CheckCircle,
   AlertCircle,
   Star,
-  MessageSquare
+  MessageSquare,
+  ShieldCheck,
+  Activity
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const DashboardOverview = () => {
+  const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [rooms, setRooms] = useState([]);
   const [feedbacks, setFeedbacks] = useState([]);
@@ -26,10 +30,10 @@ const DashboardOverview = () => {
         const [statsRes, roomsRes, feedbackRes] = await Promise.all([
           API.get('/dashboard/stats'),
           API.get('/rooms'),
-          API.get('/extras/feedback') // Live reviews
+          API.get('/extras/feedback')
         ]);
         setStats(statsRes.data.data);
-        setRooms(roomsRes.data.rooms);
+        setRooms(roomsRes.data.rooms || []);
         setFeedbacks(feedbackRes.data.feedback || []);
       } catch (err) {
         console.error('Failed to load dashboard stats:', err);
@@ -42,21 +46,22 @@ const DashboardOverview = () => {
   }, []);
 
   if (loading) {
-    return <div style={{ color: 'var(--text-muted)', padding: '40px', textAlign: 'center' }}>Loading live operational data...</div>;
+    return (
+      <div style={{ color: '#d4af37', padding: '60px', textAlign: 'center', fontSize: '15px' }}>
+        Retrieving Live Operations Ledger...
+      </div>
+    );
   }
 
   const roomStats = stats?.rooms || {};
 
-  // ================= 📊 100% REAL-TIME DYNAMIC MATH CALCULATIONS =================
+  // Dynamic Math
   const totalReviews = feedbacks.length;
-  
-  // Default benchmark values agar database mein abhi reviews na hon
   let avgRating = '4.9';
   let cleanlinessPct = '98.4';
   let servicePct = '99.1';
   let comfortPct = '97.8';
 
-  // Agar database mein real guest reviews mojood hain to LIVE AVERAGE CALCULATE KARO:
   if (totalReviews > 0) {
     const totalCleanliness = feedbacks.reduce((acc, f) => acc + (f.ratings?.cleanliness || 5), 0);
     const totalService = feedbacks.reduce((acc, f) => acc + (f.ratings?.service || 5), 0);
@@ -71,222 +76,363 @@ const DashboardOverview = () => {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', color: '#f8fafc', paddingBottom: '40px' }}>
       
-      {/* Welcome Title */}
-      <div>
-        <h1 className="luxury-heading" style={{ fontSize: '28px', color: '#fff', marginBottom: '6px' }}>
-          Operations & Performance Cockpit
-        </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-          Live metrics reflecting inventory status, occupancy velocity, and financial collections.
-        </p>
+      {/* ================= 1. EXECUTIVE PANORAMIC VISUAL BANNER ================= */}
+      <div style={{
+        position: 'relative',
+        borderRadius: '22px',
+        overflow: 'hidden',
+        minHeight: '200px',
+        display: 'flex',
+        alignItems: 'center',
+        padding: '36px 40px',
+        border: '1px solid rgba(212, 175, 55, 0.3)',
+        boxShadow: '0 25px 50px -10px rgba(0, 0, 0, 0.8)'
+      }}>
+        {/* Visual Background */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: `url('/Images/dashboard-banner.jpg'), url('/Images/about-hotel.jpg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'brightness(0.55) contrast(1.1)',
+          zIndex: 0
+        }} />
+
+        {/* Dark Vignette Overlay */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(90deg, rgba(5, 8, 17, 0.95) 0%, rgba(5, 8, 17, 0.65) 50%, rgba(5, 8, 17, 0.85) 100%)',
+          zIndex: 1
+        }} />
+
+        {/* Content Inside Banner */}
+        <div style={{ position: 'relative', zIndex: 2, maxWidth: '680px' }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: 'rgba(212, 175, 55, 0.15)',
+            border: '1px solid rgba(212, 175, 55, 0.4)',
+            padding: '5px 14px',
+            borderRadius: '20px',
+            color: '#d4af37',
+            fontSize: '11px',
+            fontWeight: '700',
+            letterSpacing: '1.5px',
+            textTransform: 'uppercase',
+            marginBottom: '12px'
+          }}>
+            <Sparkles size={13} /> Property Command Center
+          </div>
+
+          <h2 style={{
+            fontFamily: "'Playfair Display', Georgia, serif",
+            fontSize: 'clamp(24px, 2.8vw, 34px)',
+            color: '#ffffff',
+            margin: '0 0 8px 0',
+            fontWeight: '600'
+          }}>
+            Welcome, {user?.name || 'Administrator'}
+          </h2>
+
+          <p style={{ color: '#cbd5e1', fontSize: '13.5px', lineHeight: '1.6', margin: 0, fontWeight: '300' }}>
+            Central operations ledger is active. Today's occupancy velocity is currently tracking at <strong style={{ color: '#d4af37' }}>{roomStats.occupancyRate || '0%'}</strong> with synchronized front-desk and housekeeping channels.
+          </p>
+        </div>
+
+        {/* Right Status Pill inside banner */}
+        <div style={{
+          position: 'relative',
+          zIndex: 2,
+          marginLeft: 'auto',
+          display: 'none',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          gap: '8px'
+        }} className="banner-status-pill">
+          <div style={{
+            background: 'rgba(16, 185, 129, 0.15)',
+            border: '1px solid rgba(16, 185, 129, 0.35)',
+            padding: '8px 16px',
+            borderRadius: '25px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '12px',
+            color: '#34d399',
+            fontWeight: '600'
+          }}>
+            <Activity size={14} /> Systems: 100% Operational
+          </div>
+          <span style={{ fontSize: '11px', color: '#94a3b8' }}>Real-time Gateway Node</span>
+        </div>
       </div>
 
-      {/* Top 4 KPI Metrics */}
+      {/* ================= 2. TOP 4 EXECUTIVE KPI METRICS ================= */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
         gap: '20px'
       }}>
-        {/* Metric 1: Occupancy Rate */}
-        <div className="luxury-card" style={{ padding: '20px' }}>
+        {/* Metric 1 */}
+        <div style={metricCardStyle}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
-            <span style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: '500' }}>Occupancy Rate</span>
+            <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+              Occupancy Rate
+            </span>
             <div style={{ background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', padding: '8px', borderRadius: '10px' }}>
-              <TrendingUp size={20} />
+              <TrendingUp size={18} />
             </div>
           </div>
-          <div style={{ fontSize: '28px', fontWeight: '700', color: '#fff' }}>
+          <div style={{ fontSize: '30px', fontWeight: '700', color: '#ffffff', fontFamily: "'Playfair Display', serif" }}>
             {roomStats.occupancyRate || '0%'}
           </div>
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            {roomStats.occupied || 0} of {roomStats.total || 0} suites occupied
-          </span>
+          <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '6px' }}>
+            <strong style={{ color: '#e2e8f0' }}>{roomStats.occupied || 0}</strong> of {roomStats.total || 0} suites occupied
+          </div>
         </div>
 
-        {/* Metric 2: Total Revenue */}
-        <div className="luxury-card" style={{ padding: '20px' }}>
+        {/* Metric 2 */}
+        <div style={metricCardStyle}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
-            <span style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: '500' }}>Total Revenue</span>
-            <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '8px', borderRadius: '10px' }}>
-              <DollarSign size={20} />
+            <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+              Total Revenue
+            </span>
+            <div style={{ background: 'rgba(212, 175, 55, 0.12)', color: '#d4af37', padding: '8px', borderRadius: '10px' }}>
+              <DollarSign size={18} />
             </div>
           </div>
-          <div style={{ fontSize: '28px', fontWeight: '700', color: 'var(--primary-gold)' }}>
+          <div style={{ fontSize: '30px', fontWeight: '700', color: '#d4af37', fontFamily: "'Playfair Display', serif" }}>
             ${stats?.totalRevenue?.toLocaleString() || 0}
           </div>
-          <span style={{ fontSize: '12px', color: '#10b981' }}>
+          <div style={{ fontSize: '12px', color: '#10b981', marginTop: '6px', fontWeight: '500' }}>
             Paid bills & finalized folios
-          </span>
+          </div>
         </div>
 
-        {/* Metric 3: Active Bookings */}
-        <div className="luxury-card" style={{ padding: '20px' }}>
+        {/* Metric 3 */}
+        <div style={metricCardStyle}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
-            <span style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: '500' }}>Active Reservations</span>
-            <div style={{ background: 'rgba(197, 168, 128, 0.1)', color: 'var(--primary-gold)', padding: '8px', borderRadius: '10px' }}>
-              <CalendarCheck size={20} />
+            <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+              Active Bookings
+            </span>
+            <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '8px', borderRadius: '10px' }}>
+              <CalendarCheck size={18} />
             </div>
           </div>
-          <div style={{ fontSize: '28px', fontWeight: '700', color: '#fff' }}>
+          <div style={{ fontSize: '30px', fontWeight: '700', color: '#ffffff', fontFamily: "'Playfair Display', serif" }}>
             {stats?.activeReservations || 0}
           </div>
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            Confirmed or Checked-In
-          </span>
+          <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '6px' }}>
+            Confirmed arrivals & checked-in
+          </div>
         </div>
 
-        {/* Metric 4: Registered Guests */}
-        <div className="luxury-card" style={{ padding: '20px' }}>
+        {/* Metric 4 */}
+        <div style={metricCardStyle}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
-            <span style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: '500' }}>Guest Directory</span>
+            <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+              Guest Directory
+            </span>
             <div style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', padding: '8px', borderRadius: '10px' }}>
-              <Users size={20} />
+              <Users size={18} />
             </div>
           </div>
-          <div style={{ fontSize: '28px', fontWeight: '700', color: '#fff' }}>
+          <div style={{ fontSize: '30px', fontWeight: '700', color: '#ffffff', fontFamily: "'Playfair Display', serif" }}>
             {stats?.guestsCount || 0}
           </div>
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            Profiles in PMS database
+          <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '6px' }}>
+            Profiles in PMS central ledger
+          </div>
+        </div>
+      </div>
+
+      {/* ================= 3. ROOM INVENTORY STATUS & LIVE MATRIX ================= */}
+      <div style={{
+        background: 'rgba(13, 21, 39, 0.85)',
+        backdropFilter: 'blur(20px)',
+        border: '1px solid rgba(212, 175, 55, 0.22)',
+        borderRadius: '20px',
+        padding: '28px',
+        boxShadow: '0 20px 45px rgba(0, 0, 0, 0.7)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px', flexWrap: 'wrap', gap: '10px' }}>
+          <div>
+            <h3 style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#ffffff', fontSize: '20px', margin: '0 0 4px 0' }}>
+              Room Inventory Distribution
+            </h3>
+            <p style={{ color: '#94a3b8', fontSize: '12.5px', margin: 0 }}>
+              Live status mapping across all property wings.
+            </p>
+          </div>
+
+          <span style={{ fontSize: '12px', color: '#cbd5e1' }}>
+            Total Inventory: <strong style={{ color: '#d4af37' }}>{roomStats.total || rooms.length} Suites</strong>
           </span>
         </div>
-      </div>
 
-      {/* Room Status Breakdown Bar (SRS Module 5 & 13) */}
-      <div className="luxury-card" style={{ padding: '24px' }}>
-        <h3 style={{ color: '#fff', fontSize: '18px', marginBottom: '16px' }}>
-          Room Inventory Status Overview
-        </h3>
-
+        {/* 4 Status Breakdown Blocks */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
           gap: '16px',
-          marginBottom: '24px'
+          marginBottom: '32px'
         }}>
-          <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '14px', borderRadius: '10px' }}>
-            <div style={{ color: '#34d399', fontSize: '12px', fontWeight: '600' }}>AVAILABLE</div>
-            <div style={{ fontSize: '22px', fontWeight: '700', color: '#fff', marginTop: '4px' }}>{roomStats.available || 0} Rooms</div>
+          <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: '16px', borderRadius: '12px' }}>
+            <div style={{ color: '#34d399', fontSize: '11px', fontWeight: '700', letterSpacing: '1px' }}>AVAILABLE</div>
+            <div style={{ fontSize: '24px', fontWeight: '700', color: '#ffffff', marginTop: '6px' }}>{roomStats.available || 0} Suites</div>
           </div>
 
-          <div style={{ background: 'rgba(244, 63, 94, 0.1)', border: '1px solid rgba(244, 63, 94, 0.2)', padding: '14px', borderRadius: '10px' }}>
-            <div style={{ color: '#fb7185', fontSize: '12px', fontWeight: '600' }}>OCCUPIED</div>
-            <div style={{ fontSize: '22px', fontWeight: '700', color: '#fff', marginTop: '4px' }}>{roomStats.occupied || 0} Rooms</div>
+          <div style={{ background: 'rgba(244, 63, 94, 0.08)', border: '1px solid rgba(244, 63, 94, 0.25)', padding: '16px', borderRadius: '12px' }}>
+            <div style={{ color: '#fb7185', fontSize: '11px', fontWeight: '700', letterSpacing: '1px' }}>OCCUPIED</div>
+            <div style={{ fontSize: '24px', fontWeight: '700', color: '#ffffff', marginTop: '6px' }}>{roomStats.occupied || 0} Suites</div>
           </div>
 
-          <div style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '14px', borderRadius: '10px' }}>
-            <div style={{ color: '#fbbf24', fontSize: '12px', fontWeight: '600' }}>CLEANING</div>
-            <div style={{ fontSize: '22px', fontWeight: '700', color: '#fff', marginTop: '4px' }}>{roomStats.cleaning || 0} Rooms</div>
+          <div style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)', padding: '16px', borderRadius: '12px' }}>
+            <div style={{ color: '#fbbf24', fontSize: '11px', fontWeight: '700', letterSpacing: '1px' }}>CLEANING IN PROGRESS</div>
+            <div style={{ fontSize: '24px', fontWeight: '700', color: '#ffffff', marginTop: '6px' }}>{roomStats.cleaning || 0} Suites</div>
           </div>
 
-          <div style={{ background: 'rgba(148, 163, 184, 0.1)', border: '1px solid rgba(148, 163, 184, 0.2)', padding: '14px', borderRadius: '10px' }}>
-            <div style={{ color: '#cbd5e1', fontSize: '12px', fontWeight: '600' }}>MAINTENANCE</div>
-            <div style={{ fontSize: '22px', fontWeight: '700', color: '#fff', marginTop: '4px' }}>{roomStats.maintenance || 0} Rooms</div>
+          <div style={{ background: 'rgba(148, 163, 184, 0.08)', border: '1px solid rgba(148, 163, 184, 0.25)', padding: '16px', borderRadius: '12px' }}>
+            <div style={{ color: '#cbd5e1', fontSize: '11px', fontWeight: '700', letterSpacing: '1px' }}>MAINTENANCE</div>
+            <div style={{ fontSize: '24px', fontWeight: '700', color: '#ffffff', marginTop: '6px' }}>{roomStats.maintenance || 0} Suites</div>
           </div>
         </div>
 
-        {/* Live Rooms Quick Grid */}
-        <h4 style={{ color: '#cbd5e1', fontSize: '15px', marginBottom: '12px', fontWeight: '600' }}>
-          Live Rooms Matrix
-        </h4>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-          gap: '12px'
-        }}>
-          {rooms.map((room) => (
-            <div
-              key={room._id}
-              style={{
-                background: 'rgba(15, 23, 42, 0.6)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: '8px',
-                padding: '12px',
-                textAlign: 'center'
-              }}
-            >
-              <div style={{ fontSize: '16px', fontWeight: '700', color: '#fff' }}>#{room.roomNumber}</div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '8px' }}>{room.roomType}</div>
-              <span className={`badge badge-${room.status.toLowerCase()}`} style={{ fontSize: '10px', padding: '2px 8px' }}>
-                {room.status}
-              </span>
-            </div>
-          ))}
+        {/* Live Interactive Rooms Matrix */}
+        <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '22px' }}>
+          <h4 style={{ color: '#ffffff', fontSize: '15px', marginBottom: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <BedDouble size={16} color="#d4af37" /> Real-Time Suite State Board ({rooms.length})
+          </h4>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+            gap: '12px'
+          }}>
+            {rooms.map((room) => {
+              const statusColor = 
+                room.status === 'Available' ? '#10b981' :
+                room.status === 'Occupied' ? '#f43f5e' :
+                room.status === 'Cleaning' ? '#f59e0b' : '#94a3b8';
+
+              return (
+                <div
+                  key={room._id}
+                  style={{
+                    background: 'rgba(7, 11, 20, 0.85)',
+                    border: `1px solid ${room.status === 'Available' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 255, 255, 0.08)'}`,
+                    borderRadius: '10px',
+                    padding: '12px',
+                    textAlign: 'center',
+                    transition: 'transform 0.2s ease'
+                  }}
+                >
+                  <div style={{ fontSize: '17px', fontWeight: '700', color: '#ffffff' }}>#{room.roomNumber}</div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', margin: '2px 0 8px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {room.roomType}
+                  </div>
+                  <span style={{
+                    fontSize: '10px',
+                    fontWeight: '700',
+                    letterSpacing: '0.4px',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    background: `${statusColor}18`,
+                    color: statusColor,
+                    border: `1px solid ${statusColor}35`,
+                    display: 'inline-block'
+                  }}>
+                    ● {room.status}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* ================= 🌟 DYNAMIC GUEST SENTIMENT & FEEDBACK OVERVIEW 🌟 ================= */}
-      <div className="luxury-card" style={{ padding: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
+      {/* ================= 4. GUEST SENTIMENT & ANALYTICS ================= */}
+      <div style={{
+        background: 'rgba(13, 21, 39, 0.85)',
+        backdropFilter: 'blur(20px)',
+        border: '1px solid rgba(212, 175, 55, 0.22)',
+        borderRadius: '20px',
+        padding: '28px',
+        boxShadow: '0 20px 45px rgba(0, 0, 0, 0.7)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '14px' }}>
           <div>
-            <h3 style={{ color: '#fff', fontSize: '18px', fontWeight: '700' }}>
-              Guest Feedback & Sentiment Analytics
+            <h3 style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#ffffff', fontSize: '20px', margin: '0 0 4px 0' }}>
+              Guest Sentiment & Experience Analytics
             </h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
-              Real-time calculations aggregated dynamically from {totalReviews} verified guest reviews.
+            <p style={{ color: '#94a3b8', fontSize: '12.5px', margin: 0 }}>
+              Real-time calculations computed dynamically across {totalReviews} verified guest reviews.
             </p>
           </div>
 
           <div style={{
-            background: 'rgba(197, 168, 128, 0.15)',
-            border: '1px solid var(--primary-gold)',
-            color: 'var(--primary-gold)',
-            padding: '6px 14px',
-            borderRadius: '20px',
+            background: 'rgba(212, 175, 55, 0.12)',
+            border: '1px solid rgba(212, 175, 55, 0.4)',
+            color: '#d4af37',
+            padding: '7px 18px',
+            borderRadius: '25px',
             fontSize: '13px',
             fontWeight: '700',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px'
+            gap: '8px'
           }}>
-            <Star size={16} style={{ fill: 'var(--primary-gold)' }} /> {avgRating} / 5.0 Average Rating
+            <Star size={15} style={{ fill: '#d4af37' }} /> {avgRating} / 5.0 Overall Satisfaction
           </div>
         </div>
 
-        {/* 3 DYNAMIC STATS CARDS */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginBottom: '28px' }}>
-          <div style={{ background: 'rgba(15, 23, 42, 0.8)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
-            <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Cleanliness & Hygiene</div>
-            <div style={{ fontSize: '22px', fontWeight: '700', color: '#34d399', marginTop: '4px' }}>
+        {/* 3 Metric Progress Blocks */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '18px', marginBottom: '32px' }}>
+          <div style={{ background: 'rgba(7, 11, 20, 0.85)', padding: '18px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+            <div style={{ color: '#94a3b8', fontSize: '12px', fontWeight: '500' }}>Cleanliness & Sanitization</div>
+            <div style={{ fontSize: '26px', fontWeight: '700', color: '#34d399', marginTop: '6px' }}>
               {cleanlinessPct}%
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-              Calculated from guest cleanliness ratings
+            <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', marginTop: '10px', overflow: 'hidden' }}>
+              <div style={{ width: `${cleanlinessPct}%`, height: '100%', background: '#34d399', borderRadius: '4px' }} />
             </div>
           </div>
 
-          <div style={{ background: 'rgba(15, 23, 42, 0.8)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
-            <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Staff & Front Desk Service</div>
-            <div style={{ fontSize: '22px', fontWeight: '700', color: '#38bdf8', marginTop: '4px' }}>
+          <div style={{ background: 'rgba(7, 11, 20, 0.85)', padding: '18px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+            <div style={{ color: '#94a3b8', fontSize: '12px', fontWeight: '500' }}>Front Desk & Butler Service</div>
+            <div style={{ fontSize: '26px', fontWeight: '700', color: '#38bdf8', marginTop: '6px' }}>
               {servicePct}%
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-              Calculated from service & butler responsiveness
+            <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', marginTop: '10px', overflow: 'hidden' }}>
+              <div style={{ width: `${servicePct}%`, height: '100%', background: '#38bdf8', borderRadius: '4px' }} />
             </div>
           </div>
 
-          <div style={{ background: 'rgba(15, 23, 42, 0.8)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
-            <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Suite Comfort & Amenities</div>
-            <div style={{ fontSize: '22px', fontWeight: '700', color: 'var(--primary-gold)', marginTop: '4px' }}>
+          <div style={{ background: 'rgba(7, 11, 20, 0.85)', padding: '18px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+            <div style={{ color: '#94a3b8', fontSize: '12px', fontWeight: '500' }}>Suite Comfort & Linens</div>
+            <div style={{ fontSize: '26px', fontWeight: '700', color: '#d4af37', marginTop: '6px' }}>
               {comfortPct}%
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-              Calculated from room comfort and bedding scores
+            <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', marginTop: '10px', overflow: 'hidden' }}>
+              <div style={{ width: `${comfortPct}%`, height: '100%', background: '#d4af37', borderRadius: '4px' }} />
             </div>
           </div>
         </div>
 
-        {/* RECENT REVIEWS FEED */}
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '20px' }}>
-          <h4 style={{ color: '#fff', fontSize: '15px', fontWeight: '700', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <MessageSquare size={16} color="var(--primary-gold)" /> Verified Guest Comments & Review Log ({feedbacks.length})
+        {/* Live Guest Review Feed */}
+        <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '22px' }}>
+          <h4 style={{ color: '#ffffff', fontSize: '15px', fontWeight: '600', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <MessageSquare size={16} color="#d4af37" /> Verified Guest Testimonials ({feedbacks.length})
           </h4>
 
           {feedbacks.length === 0 ? (
-            <div style={{ padding: '20px', background: 'rgba(15, 23, 42, 0.6)', borderRadius: '10px', color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center' }}>
-              No guest reviews submitted yet. Submit a review from the homepage to see it appear here!
+            <div style={{ padding: '24px', background: 'rgba(7, 11, 20, 0.6)', borderRadius: '12px', color: '#94a3b8', fontSize: '13px', textAlign: 'center' }}>
+              No guest feedback submitted yet. Reviews submitted from the public site will appear here in real-time.
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
@@ -294,37 +440,37 @@ const DashboardOverview = () => {
                 <div 
                   key={fb._id}
                   style={{
-                    background: 'rgba(15, 23, 42, 0.9)',
+                    background: 'rgba(7, 11, 20, 0.85)',
                     border: '1px solid rgba(255, 255, 255, 0.06)',
-                    borderRadius: '12px',
-                    padding: '16px',
+                    borderRadius: '14px',
+                    padding: '18px',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between'
                   }}
                 >
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                       <div style={{ display: 'flex', gap: '2px' }}>
                         {[...Array(fb.ratings?.cleanliness || 5)].map((_, i) => (
-                          <Star key={i} size={14} color="var(--primary-gold)" style={{ fill: 'var(--primary-gold)' }} />
+                          <Star key={i} size={13} color="#d4af37" style={{ fill: '#d4af37' }} />
                         ))}
                       </div>
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>
                         {new Date(fb.createdAt).toLocaleDateString()}
                       </span>
                     </div>
 
-                    <p style={{ color: '#e2e8f0', fontSize: '13px', lineHeight: '1.5', fontStyle: 'italic', marginBottom: '14px' }}>
+                    <p style={{ color: '#cbd5e1', fontSize: '13px', lineHeight: '1.6', fontStyle: 'italic', marginBottom: '16px' }}>
                       "{fb.comments}"
                     </p>
                   </div>
 
-                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ fontSize: '12px', color: '#fff', fontWeight: '600' }}>
+                  <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.04)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontSize: '12.5px', color: '#ffffff', fontWeight: '600' }}>
                       {fb.guest?.fullName || 'Verified Resident'}
                     </div>
-                    <span style={{ fontSize: '10px', color: 'var(--primary-gold)', background: 'rgba(197, 168, 128, 0.1)', padding: '2px 8px', borderRadius: '10px' }}>
+                    <span style={{ fontSize: '10px', color: '#d4af37', background: 'rgba(212, 175, 55, 0.1)', padding: '2px 8px', borderRadius: '10px', fontWeight: '600' }}>
                       Verified Stay
                     </span>
                   </div>
@@ -336,8 +482,24 @@ const DashboardOverview = () => {
 
       </div>
 
+      <style>{`
+        @media (min-width: 900px) {
+          .banner-status-pill {
+            display: flex !important;
+          }
+        }
+      `}</style>
     </div>
   );
+};
+
+const metricCardStyle = {
+  background: 'rgba(13, 21, 39, 0.85)',
+  backdropFilter: 'blur(16px)',
+  border: '1px solid rgba(212, 175, 55, 0.2)',
+  borderRadius: '16px',
+  padding: '22px',
+  boxShadow: '0 15px 35px -10px rgba(0, 0, 0, 0.7)'
 };
 
 export default DashboardOverview;

@@ -10,7 +10,12 @@ import {
   Shield, 
   X, 
   Heart,
-  Edit2
+  Sparkles,
+  ShieldCheck,
+  Calendar,
+  Award,
+  Crown,
+  CheckCircle2
 } from 'lucide-react';
 
 const GuestsList = () => {
@@ -35,7 +40,7 @@ const GuestsList = () => {
     try {
       setLoading(true);
       const res = await API.get('/guests');
-      setGuests(res.data.guests);
+      setGuests(res.data.guests || []);
     } catch (err) {
       console.error('Error fetching guests:', err);
     } finally {
@@ -83,119 +88,328 @@ const GuestsList = () => {
     g.idNumber?.includes(search)
   );
 
+  // Total preferences count across all residents
+  const totalTrackedPreferences = guests.reduce((acc, g) => acc + (g.preferences?.length || 0), 0);
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', color: '#f8fafc', paddingBottom: '60px' }}>
       
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <h1 className="luxury-heading" style={{ fontSize: '26px', color: '#fff', marginBottom: '4px' }}>
-            Guest Profiles Directory
-          </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
-            Maintain guest identity records, document numbers, contact portfolios, and personalized stay preferences.
+      {/* ================= 1. EXECUTIVE VIP PANORAMIC BANNER ================= */}
+      <div style={{
+        position: 'relative',
+        borderRadius: '22px',
+        overflow: 'hidden',
+        minHeight: '210px',
+        display: 'flex',
+        alignItems: 'center',
+        padding: '36px 40px',
+        border: '1px solid rgba(212, 175, 55, 0.3)',
+        boxShadow: '0 25px 50px -10px rgba(0, 0, 0, 0.8)'
+      }}>
+        {/* Background Visual Image with Fallback */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: `url('/Images/guests-banner.jpg'), url('/Images/about-hotel.jpg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'brightness(0.55) contrast(1.1)',
+          zIndex: 0
+        }} />
+
+        {/* Ambient Dark Gradient Vignette */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(90deg, rgba(5, 8, 17, 0.95) 0%, rgba(5, 8, 17, 0.65) 50%, rgba(5, 8, 17, 0.85) 100%)',
+          zIndex: 1
+        }} />
+
+        {/* Banner Content */}
+        <div style={{ position: 'relative', zIndex: 2, maxWidth: '640px' }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: 'rgba(212, 175, 55, 0.15)',
+            border: '1px solid rgba(212, 175, 55, 0.4)',
+            padding: '5px 14px',
+            borderRadius: '20px',
+            color: '#d4af37',
+            fontSize: '11px',
+            fontWeight: '700',
+            letterSpacing: '1.5px',
+            textTransform: 'uppercase',
+            marginBottom: '12px'
+          }}>
+            <Crown size={13} /> Resident Portfolio & Relations
+          </div>
+
+          <h2 style={{
+            fontFamily: "'Playfair Display', Georgia, serif",
+            fontSize: 'clamp(24px, 2.8vw, 34px)',
+            color: '#ffffff',
+            margin: '0 0 8px 0',
+            fontWeight: '600'
+          }}>
+            Guest Directory & VIP Dossiers
+          </h2>
+
+          <p style={{ color: '#cbd5e1', fontSize: '13.5px', lineHeight: '1.6', margin: 0, fontWeight: '300' }}>
+            Central repository of resident identities, verified government documentation, bespoke room preferences, and direct contact dossiers.
           </p>
         </div>
 
-        <button onClick={() => setIsModalOpen(true)} className="btn-gold">
-          <Plus size={18} />
-          <span>New Guest Profile</span>
-        </button>
+        {/* Action Button: Register New Guest inside Banner */}
+        <div style={{
+          position: 'relative',
+          zIndex: 2,
+          marginLeft: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          gap: '12px'
+        }} className="guests-banner-actions">
+          <button 
+            onClick={() => setIsModalOpen(true)} 
+            style={{
+              background: 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)',
+              color: '#070b14',
+              fontWeight: '700',
+              fontSize: '12.5px',
+              letterSpacing: '0.6px',
+              textTransform: 'uppercase',
+              padding: '12px 24px',
+              borderRadius: '25px',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 18px rgba(212, 175, 55, 0.35)',
+              transition: 'transform 0.2s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            <Plus size={16} />
+            <span>Register Resident</span>
+          </button>
+
+          <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+            {guests.length} Profiles Synchronized
+          </span>
+        </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="luxury-card" style={{ padding: '16px 20px', display: 'flex', gap: '16px', alignItems: 'center' }}>
-        <div style={{ position: 'relative', width: '100%', maxWidth: '440px' }}>
-          <Search size={18} color="var(--primary-gold)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+      {/* ================= 2. LIVE METRICS RIBBON & SEARCH BAR ================= */}
+      <div style={{
+        background: '#0d1527',
+        border: '1px solid rgba(212, 175, 55, 0.22)',
+        borderRadius: '18px',
+        padding: '18px 24px',
+        display: 'flex',
+        gap: '20px',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        boxShadow: '0 15px 35px -10px rgba(0, 0, 0, 0.7)'
+      }}>
+        {/* Search Input */}
+        <div style={{ position: 'relative', flex: 1, minWidth: '280px' }}>
+          <Search size={16} color="#d4af37" style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)' }} />
           <input
             type="text"
-            placeholder="Search by guest name, phone, CNIC/Passport..."
+            placeholder="Search by resident name, phone number, CNIC, or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{
               width: '100%',
-              background: 'rgba(15, 23, 42, 0.8)',
-              border: '1px solid var(--border-color)',
-              padding: '10px 14px 10px 38px',
-              borderRadius: '8px',
-              color: '#fff',
+              background: 'rgba(7, 11, 20, 0.85)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              padding: '11px 16px 11px 42px',
+              borderRadius: '10px',
+              color: '#ffffff',
               fontSize: '13px',
-              outline: 'none'
+              outline: 'none',
+              boxSizing: 'border-box'
             }}
           />
         </div>
+
+        {/* 3 Real-time Status Badges */}
+        <div style={{ display: 'flex', gap: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#cbd5e1' }}>
+            <Users size={14} color="#d4af37" />
+            <span>Verified: <strong style={{ color: '#d4af37' }}>{filteredGuests.length}</strong></span>
+          </div>
+
+          <span style={{ color: 'rgba(255,255,255,0.1)' }}>|</span>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#cbd5e1' }}>
+            <Heart size={14} color="#fb7185" />
+            <span>Preferences: <strong style={{ color: '#fff' }}>{totalTrackedPreferences} Logged</strong></span>
+          </div>
+
+          <span style={{ color: 'rgba(255,255,255,0.1)' }}>|</span>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#10b981' }}>
+            <ShieldCheck size={14} />
+            <span>Encrypted Dossiers</span>
+          </div>
+        </div>
       </div>
 
-      {/* Guests Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-        gap: '20px'
-      }}>
-        {loading ? (
-          <div style={{ color: 'var(--text-muted)', padding: '30px' }}>Loading guests...</div>
-        ) : filteredGuests.length === 0 ? (
-          <div className="luxury-card" style={{ gridColumn: '1 / -1', padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-            No guest profiles found matching the search.
-          </div>
-        ) : (
-          filteredGuests.map((guest) => (
-            <div key={guest._id} className="luxury-card" style={{ padding: '22px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+      {/* ================= 3. GUESTS VIP DOSSIER CARDS GRID ================= */}
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '60px 0', color: '#d4af37', fontSize: '15px' }}>
+          Retrieving resident directory...
+        </div>
+      ) : filteredGuests.length === 0 ? (
+        <div style={{
+          padding: '60px 20px',
+          textAlign: 'center',
+          background: 'rgba(13, 21, 39, 0.6)',
+          borderRadius: '18px',
+          border: '1px solid rgba(255, 255, 255, 0.06)'
+        }}>
+          <Users size={36} color="#94a3b8" style={{ marginBottom: '12px', opacity: 0.6 }} />
+          <h4 style={{ color: '#fff', fontSize: '18px', margin: '0 0 6px 0' }}>No Profiles Located</h4>
+          <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>Try clearing your search query or registering a new resident profile.</p>
+        </div>
+      ) : (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 380px))',
+          justifyContent: 'center',
+          gap: '24px'
+        }}>
+          {filteredGuests.map((guest) => (
+            <div 
+              key={guest._id} 
+              style={{
+                background: '#0d1527',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '18px',
+                padding: '24px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                boxShadow: '0 15px 35px -10px rgba(0, 0, 0, 0.7)',
+                transition: 'transform 0.2s ease, border-color 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-3px)';
+                e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.35)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+              }}
+            >
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+                {/* Header: Initial Avatar & VIP Status Tag */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '18px' }}>
                   <div style={{
-                    background: 'linear-gradient(135deg, #c5a880 0%, #b09166 100%)',
-                    color: '#0b1120',
-                    width: '42px',
-                    height: '42px',
-                    borderRadius: '10px',
+                    background: 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)',
+                    color: '#070b14',
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '12px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontWeight: '700',
-                    fontSize: '16px'
+                    fontWeight: '800',
+                    fontSize: '18px',
+                    boxShadow: '0 4px 12px rgba(212, 175, 55, 0.3)',
+                    flexShrink: 0
                   }}>
-                    {guest.fullName[0]?.toUpperCase()}
+                    {guest.fullName[0]?.toUpperCase() || 'G'}
                   </div>
-                  <div>
-                    <h3 style={{ color: '#fff', fontSize: '17px', fontWeight: '600' }}>{guest.fullName}</h3>
-                    <div style={{ color: 'var(--primary-gold)', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Shield size={12} /> {guest.idType}: {guest.idNumber}
+
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <h3 style={{
+                        fontFamily: "'Playfair Display', serif",
+                        color: '#ffffff',
+                        fontSize: '19px',
+                        margin: '0 0 3px 0'
+                      }}>
+                        {guest.fullName}
+                      </h3>
+                      <span style={{ fontSize: '10px', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '2px 8px', borderRadius: '10px', fontWeight: '700' }}>
+                        ACTIVE
+                      </span>
+                    </div>
+
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      color: '#d4af37',
+                      fontSize: '11px',
+                      background: 'rgba(212, 175, 55, 0.08)',
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      border: '1px solid rgba(212, 175, 55, 0.25)',
+                      fontWeight: '600'
+                    }}>
+                      <ShieldCheck size={12} /> {guest.idType || 'Document'}: {guest.idNumber}
                     </div>
                   </div>
                 </div>
 
-                {/* Contact Information */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+                {/* Contact Information Dossier */}
+                <div style={{
+                  background: 'rgba(7, 11, 20, 0.85)',
+                  padding: '14px 16px',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                  fontSize: '12.5px',
+                  marginBottom: '16px'
+                }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Mail size={14} color="var(--primary-gold)" />
-                    <span style={{ color: '#cbd5e1' }}>{guest.email}</span>
+                    <Mail size={13} color="#d4af37" style={{ flexShrink: 0 }} />
+                    <span style={{ color: '#e2e8f0', wordBreak: 'break-all' }}>{guest.email || 'No email registered'}</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Phone size={14} color="var(--primary-gold)" />
-                    <span style={{ color: '#cbd5e1' }}>{guest.phone}</span>
+                    <Phone size={13} color="#d4af37" style={{ flexShrink: 0 }} />
+                    <span style={{ color: '#e2e8f0' }}>{guest.phone || 'No phone registered'}</span>
                   </div>
                   {guest.address?.city && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <MapPin size={14} color="var(--primary-gold)" />
-                      <span>{guest.address.city}, {guest.address.country}</span>
+                      <MapPin size={13} color="#d4af37" style={{ flexShrink: 0 }} />
+                      <span style={{ color: '#94a3b8' }}>{guest.address.city}, {guest.address.country || 'Pakistan'}</span>
                     </div>
                   )}
                 </div>
 
-                {/* Preferences Badges (SRS Requirement) */}
+                {/* Bespoke Stay Preferences */}
                 {guest.preferences?.length > 0 && (
                   <div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{
+                      fontSize: '11px',
+                      color: '#94a3b8',
+                      marginBottom: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      fontWeight: '600',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.8px'
+                    }}>
                       <Heart size={12} color="#fb7185" /> Bespoke Preferences:
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                       {guest.preferences.map((pref, i) => (
                         <span key={i} style={{
                           fontSize: '11px',
-                          background: 'rgba(255,255,255,0.05)',
-                          border: '1px solid rgba(255,255,255,0.08)',
-                          color: '#e2e8f0',
+                          background: 'rgba(255, 255, 255, 0.04)',
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                          color: '#cbd5e1',
                           padding: '3px 8px',
                           borderRadius: '6px'
                         }}>
@@ -207,65 +421,103 @@ const GuestsList = () => {
                 )}
               </div>
 
-              <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px', marginTop: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>
-                Registered: {new Date(guest.createdAt).toLocaleDateString()}
+              {/* Bottom Registration Timestamp */}
+              <div style={{
+                borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                paddingTop: '12px',
+                marginTop: '16px',
+                fontSize: '11px',
+                color: '#64748b',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}>
+                <Calendar size={12} color="#d4af37" />
+                <span>Profile Registered: {new Date(guest.createdAt).toLocaleDateString()}</span>
               </div>
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* CREATE GUEST MODAL */}
+      {/* ================= REGISTER GUEST MODAL ================= */}
       {isModalOpen && (
         <div style={modalBackdropStyle}>
-          <div className="luxury-card" style={{ width: '100%', maxWidth: '480px', padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <h3 style={{ color: '#fff', fontSize: '18px' }}>Register New Guest Profile</h3>
-              <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}><X size={18} /></button>
+          <div style={{
+            background: 'rgba(15, 23, 42, 0.98)',
+            border: '1px solid rgba(212, 175, 55, 0.35)',
+            borderRadius: '22px',
+            width: '100%',
+            maxWidth: '520px',
+            padding: '32px',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.9)'
+          }}>
+            
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ background: 'rgba(212, 175, 55, 0.15)', padding: '6px', borderRadius: '8px', color: '#d4af37' }}>
+                  <Users size={20} />
+                </div>
+                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '21px', color: '#fff', margin: 0 }}>
+                  Register Resident Profile
+                </h3>
+              </div>
+              <button 
+                onClick={() => setIsModalOpen(false)} 
+                style={{ background: 'rgba(255,255,255,0.06)', border: 'none', color: '#cbd5e1', cursor: 'pointer', padding: '6px', borderRadius: '6px' }}
+              >
+                <X size={18} />
+              </button>
             </div>
-            <form onSubmit={handleCreateGuest} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+            <form onSubmit={handleCreateGuest} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               <div>
-                <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Full Name *</label>
+                <label style={fieldLabelStyle}>Full Legal Name *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Asad Siddiqui"
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  style={inputStyle}
+                  style={fieldInputStyle}
                 />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Email Address *</label>
+                  <label style={fieldLabelStyle}>Email Address *</label>
                   <input
                     type="email"
                     required
                     placeholder="guest@gmail.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    style={inputStyle}
+                    style={fieldInputStyle}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Phone Number *</label>
+                  <label style={fieldLabelStyle}>Contact Phone *</label>
                   <input
                     type="text"
                     required
                     placeholder="+92 300 1234567"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    style={inputStyle}
+                    style={fieldInputStyle}
                   />
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>ID Document Type</label>
+                  <label style={fieldLabelStyle}>Identification Document</label>
                   <select
                     value={formData.idType}
                     onChange={(e) => setFormData({ ...formData, idType: e.target.value })}
-                    style={inputStyle}
+                    style={fieldInputStyle}
                   >
                     <option value="National ID">National ID (CNIC)</option>
                     <option value="Passport">International Passport</option>
@@ -273,58 +525,98 @@ const GuestsList = () => {
                   </select>
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Document / ID Number *</label>
+                  <label style={fieldLabelStyle}>Document / ID Number *</label>
                   <input
                     type="text"
                     required
                     placeholder="42101-9876543-1"
                     value={formData.idNumber}
                     onChange={(e) => setFormData({ ...formData, idNumber: e.target.value })}
-                    style={inputStyle}
+                    style={fieldInputStyle}
                   />
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>City</label>
+                  <label style={fieldLabelStyle}>City of Residence</label>
                   <input
                     type="text"
-                    placeholder="Karachi / Lahore"
+                    placeholder="Karachi / Islamabad"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    style={inputStyle}
+                    style={fieldInputStyle}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Country</label>
+                  <label style={fieldLabelStyle}>Country</label>
                   <input
                     type="text"
                     value={formData.country}
                     onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                    style={inputStyle}
+                    style={fieldInputStyle}
                   />
                 </div>
               </div>
+
               <div>
-                <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Stay Preferences (comma separated)</label>
+                <label style={fieldLabelStyle}>Stay Preferences & Requests (comma separated)</label>
                 <input
                   type="text"
                   placeholder="Non-smoking, High Floor, Feather Pillows"
                   value={formData.preferences}
                   onChange={(e) => setFormData({ ...formData, preferences: e.target.value })}
-                  style={inputStyle}
+                  style={fieldInputStyle}
                 />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
-                <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary">Cancel</button>
-                <button type="submit" disabled={submitting} className="btn-gold">
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '8px' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setIsModalOpen(false)} 
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    color: '#cbd5e1',
+                    padding: '9px 18px',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '13px'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={submitting} 
+                  style={{
+                    background: 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)',
+                    color: '#070b14',
+                    fontWeight: '700',
+                    fontSize: '13px',
+                    padding: '9px 22px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
                   {submitting ? 'Registering...' : 'Save Profile'}
                 </button>
               </div>
+
             </form>
+
           </div>
         </div>
       )}
+
+      <style>{`
+        @media (max-width: 900px) {
+          .guests-banner-actions {
+            display: none !important;
+          }
+        }
+      `}</style>
 
     </div>
   );
@@ -336,24 +628,32 @@ const modalBackdropStyle = {
   left: 0,
   width: '100%',
   height: '100%',
-  background: 'rgba(0, 0, 0, 0.75)',
-  backdropFilter: 'blur(8px)',
+  background: 'rgba(0, 0, 0, 0.85)',
+  backdropFilter: 'blur(10px)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  zIndex: 100,
+  zIndex: 1000,
   padding: '20px'
 };
 
-const inputStyle = {
+const fieldLabelStyle = {
+  fontSize: '11.5px',
+  color: '#cbd5e1',
+  display: 'block',
+  marginBottom: '5px'
+};
+
+const fieldInputStyle = {
   width: '100%',
-  background: 'rgba(15, 23, 42, 0.8)',
-  border: '1px solid var(--border-color)',
-  padding: '8px 12px',
+  background: 'rgba(7, 11, 20, 0.85)',
+  border: '1px solid rgba(255, 255, 255, 0.12)',
+  padding: '10px 12px',
   borderRadius: '8px',
-  color: '#fff',
+  color: '#ffffff',
   fontSize: '13px',
-  outline: 'none'
+  outline: 'none',
+  boxSizing: 'border-box'
 };
 
 export default GuestsList;

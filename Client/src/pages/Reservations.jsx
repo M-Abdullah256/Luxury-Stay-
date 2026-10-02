@@ -7,7 +7,14 @@ import {
   Key, 
   LogOut, 
   X, 
-  CheckCircle2
+  CheckCircle2,
+  Sparkles,
+  Users,
+  BedDouble,
+  Clock,
+  ChevronRight,
+  ShieldCheck,
+  Calendar
 } from 'lucide-react';
 
 const Reservations = () => {
@@ -50,9 +57,9 @@ const Reservations = () => {
         API.get('/rooms?status=Available'),
         API.get('/guests')
       ]);
-      setReservations(resRes.data.reservations);
-      setRooms(roomsRes.data.rooms);
-      setGuests(guestsRes.data.guests);
+      setReservations(resRes.data.reservations || []);
+      setRooms(roomsRes.data.rooms || []);
+      setGuests(guestsRes.data.guests || []);
     } catch (err) {
       console.error('Error loading data:', err);
     } finally {
@@ -66,7 +73,7 @@ const Reservations = () => {
 
   // Automated Check-In
   const handleCheckIn = async (reservationId, roomNumber) => {
-    if (!window.confirm(`Issue room key and Check-In guest for Room #${roomNumber}?`)) return;
+    if (!window.confirm(`Issue room key card and Check-In guest for Suite #${roomNumber}?`)) return;
     try {
       await API.patch(`/reservations/${reservationId}/check-in`);
       fetchData();
@@ -77,7 +84,7 @@ const Reservations = () => {
 
   // Automated Check-Out
   const handleCheckOut = async (reservationId, roomNumber) => {
-    if (!window.confirm(`Finalize stay and Check-Out Room #${roomNumber}? Room will be sent to Cleaning.`)) return;
+    if (!window.confirm(`Finalize stay and Check-Out Suite #${roomNumber}? Room will be automatically transferred to Housekeeping.`)) return;
     try {
       await API.patch(`/reservations/${reservationId}/check-out`);
       fetchData();
@@ -131,176 +138,308 @@ const Reservations = () => {
     const matchesSearch = 
       r.bookingReference?.toLowerCase().includes(search.toLowerCase()) ||
       r.guest?.fullName?.toLowerCase().includes(search.toLowerCase()) ||
-      r.room?.roomNumber?.includes(search);
+      r.room?.roomNumber?.toString().includes(search);
     const matchesStatus = statusFilter ? r.status === statusFilter : true;
     return matchesSearch && matchesStatus;
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', color: '#f8fafc', paddingBottom: '60px' }}>
       
-      {/* Page Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      {/* ================= TOP ACTION HEADER ================= */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '16px',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+        paddingBottom: '20px'
+      }}>
         <div>
-          <h1 className="luxury-heading" style={{ fontSize: '26px', color: '#fff', marginBottom: '4px' }}>
-            Reservations & Front Desk
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#d4af37', fontSize: '11px', fontWeight: '700', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '6px' }}>
+            <CalendarCheck size={14} /> Front Desk Ledger
+          </div>
+          <h1 style={{
+            fontFamily: "'Playfair Display', Georgia, serif",
+            fontSize: 'clamp(24px, 3vw, 34px)',
+            color: '#ffffff',
+            margin: 0,
+            fontWeight: '600'
+          }}>
+            Reservations & Check-In Desk
           </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
-            Manage room reservations, execute automated check-in with key card issuance, and complete check-outs.
-          </p>
         </div>
 
-        <button onClick={() => setIsModalOpen(true)} className="btn-gold">
-          <Plus size={18} />
+        <button 
+          onClick={() => setIsModalOpen(true)} 
+          style={{
+            background: 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)',
+            color: '#070b14',
+            fontWeight: '700',
+            fontSize: '12.5px',
+            letterSpacing: '0.5px',
+            textTransform: 'uppercase',
+            padding: '11px 22px',
+            borderRadius: '25px',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)',
+            transition: 'transform 0.2s ease'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+        >
+          <Plus size={16} />
           <span>New Reservation</span>
         </button>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="luxury-card" style={{ padding: '16px 20px', display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
-          <Search size={18} color="var(--primary-gold)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+      {/* ================= SEARCH & STATUS FILTER BAR ================= */}
+      <div style={{
+        background: '#0d1527',
+        border: '1px solid rgba(212, 175, 55, 0.22)',
+        borderRadius: '18px',
+        padding: '18px 24px',
+        display: 'flex',
+        gap: '18px',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        boxShadow: '0 15px 35px -10px rgba(0, 0, 0, 0.7)'
+      }}>
+        {/* Search Input */}
+        <div style={{ position: 'relative', flex: 1, minWidth: '280px' }}>
+          <Search size={16} color="#d4af37" style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)' }} />
           <input
             type="text"
-            placeholder="Search by reference, guest name or room #..."
+            placeholder="Search by reference, resident name, or room #..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{
               width: '100%',
-              background: 'rgba(15, 23, 42, 0.8)',
-              border: '1px solid var(--border-color)',
-              padding: '10px 14px 10px 38px',
-              borderRadius: '8px',
-              color: '#fff',
+              background: 'rgba(7, 11, 20, 0.85)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              padding: '11px 16px 11px 42px',
+              borderRadius: '10px',
+              color: '#ffffff',
               fontSize: '13px',
-              outline: 'none'
+              outline: 'none',
+              boxSizing: 'border-box'
             }}
           />
         </div>
 
-        {/* Status Filters */}
+        {/* Status Filter Buttons */}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {['', 'Confirmed', 'Checked-In', 'Checked-Out', 'Cancelled'].map((st) => (
-            <button
-              key={st}
-              onClick={() => setStatusFilter(st)}
-              style={{
-                background: statusFilter === st ? 'var(--primary-gold)' : 'rgba(255,255,255,0.05)',
-                color: statusFilter === st ? '#0f172a' : '#cbd5e1',
-                border: '1px solid rgba(255,255,255,0.08)',
-                padding: '6px 14px',
-                borderRadius: '8px',
-                fontSize: '12px',
-                fontWeight: '600',
-                cursor: 'pointer'
-              }}
-            >
-              {st === '' ? 'All Bookings' : st}
-            </button>
-          ))}
+          {['', 'Confirmed', 'Checked-In', 'Checked-Out', 'Cancelled'].map((st) => {
+            const isSelected = statusFilter === st;
+            return (
+              <button
+                key={st}
+                onClick={() => setStatusFilter(st)}
+                style={{
+                  background: isSelected ? 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)' : 'rgba(255, 255, 255, 0.04)',
+                  color: isSelected ? '#070b14' : '#cbd5e1',
+                  border: isSelected ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
+                  padding: '7px 16px',
+                  borderRadius: '20px',
+                  fontSize: '11.5px',
+                  fontWeight: isSelected ? '700' : '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                {st === '' ? 'All Bookings' : st}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Reservations Table */}
-      <div className="luxury-card" style={{ overflowX: 'auto', padding: '12px' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-muted)' }}>
-              <th style={{ padding: '14px' }}>Reference</th>
-              <th style={{ padding: '14px' }}>Guest Details</th>
-              <th style={{ padding: '14px' }}>Assigned Suite</th>
-              <th style={{ padding: '14px' }}>Stay Duration</th>
-              <th style={{ padding: '14px' }}>Total Tariffs</th>
-              <th style={{ padding: '14px' }}>Status</th>
-              <th style={{ padding: '14px', textAlign: 'center' }}>Front Desk Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
-                  Loading reservations...
-                </td>
+      {/* ================= RESERVATIONS EXECUTIVE TABLE ================= */}
+      <div style={{
+        background: '#0d1527',
+        border: '1px solid rgba(212, 175, 55, 0.22)',
+        borderRadius: '18px',
+        overflow: 'hidden',
+        boxShadow: '0 20px 45px rgba(0, 0, 0, 0.7)'
+      }}>
+        <div style={{ overflowX: 'auto', padding: '8px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#94a3b8' }}>
+                <th style={thStyle}>Reference</th>
+                <th style={thStyle}>Resident Details</th>
+                <th style={thStyle}>Assigned Suite</th>
+                <th style={thStyle}>Stay Duration</th>
+                <th style={thStyle}>Total Tariff</th>
+                <th style={thStyle}>Operational State</th>
+                <th style={{ ...thStyle, textAlign: 'center' }}>Front Desk Actions</th>
               </tr>
-            ) : filteredReservations.length === 0 ? (
-              <tr>
-                <td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
-                  No reservations found matching the filters.
-                </td>
-              </tr>
-            ) : (
-              filteredReservations.map((res) => (
-                <tr key={res._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                  <td style={{ padding: '14px', fontWeight: '600', color: 'var(--primary-gold)' }}>
-                    {res.bookingReference}
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '50px', color: '#d4af37' }}>
+                    Loading active reservation ledger...
                   </td>
-                  <td style={{ padding: '14px' }}>
-                    <div style={{ color: '#fff', fontWeight: '600' }}>{res.guest?.fullName || 'Walk-in Guest'}</div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>{res.guest?.phone}</div>
+                </tr>
+              ) : filteredReservations.length === 0 ? (
+                <tr>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '50px', color: '#94a3b8' }}>
+                    No bookings found matching the criteria.
                   </td>
-                  <td style={{ padding: '14px' }}>
-                    <div style={{ color: '#fff', fontWeight: '500' }}>Room #{res.room?.roomNumber}</div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>{res.room?.roomType}</div>
-                  </td>
-                  <td style={{ padding: '14px', color: '#cbd5e1' }}>
-                    <div>In: {new Date(res.checkInDate).toLocaleDateString()}</div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>
-                      Out: {new Date(res.checkOutDate).toLocaleDateString()}
-                    </div>
-                  </td>
-                  <td style={{ padding: '14px', fontWeight: '700', color: '#fff' }}>
-                    ${res.roomCharges}
-                  </td>
-                  <td style={{ padding: '14px' }}>
-                    <span className={`badge badge-${res.status === 'Checked-In' ? 'occupied' : res.status === 'Confirmed' ? 'available' : 'reserved'}`}>
-                      ● {res.status}
-                    </span>
-                  </td>
-                  <td style={{ padding: '14px', textAlign: 'center' }}>
-                    {res.status === 'Confirmed' && (
-                      <button
-                        onClick={() => handleCheckIn(res._id, res.room?.roomNumber)}
-                        className="btn-gold"
-                        style={{ padding: '6px 12px', fontSize: '12px', borderRadius: '6px' }}
-                      >
-                        <Key size={14} /> Check-In
-                      </button>
-                    )}
+                </tr>
+              ) : (
+                filteredReservations.map((res) => {
+                  const statusBadgeStyle = 
+                    res.status === 'Checked-In' ? { bg: 'rgba(56, 189, 248, 0.12)', border: 'rgba(56, 189, 248, 0.35)', color: '#38bdf8' } :
+                    res.status === 'Confirmed' ? { bg: 'rgba(16, 185, 129, 0.12)', border: 'rgba(16, 185, 129, 0.35)', color: '#34d399' } :
+                    res.status === 'Checked-Out' ? { bg: 'rgba(148, 163, 184, 0.12)', border: 'rgba(148, 163, 184, 0.35)', color: '#cbd5e1' } :
+                    { bg: 'rgba(244, 63, 94, 0.12)', border: 'rgba(244, 63, 94, 0.35)', color: '#fb7185' };
 
-                    {res.status === 'Checked-In' && (
-                      <button
-                        onClick={() => handleCheckOut(res._id, res.room?.roomNumber)}
-                        style={{
-                          background: 'rgba(244, 63, 94, 0.15)',
-                          border: '1px solid var(--danger-rose)',
-                          color: '#fb7185',
-                          padding: '6px 12px',
-                          fontSize: '12px',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
+                  return (
+                    <tr 
+                      key={res._id} 
+                      style={{
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
+                        transition: 'background 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    >
+                      {/* Reference Code */}
+                      <td style={tdStyle}>
+                        <span style={{
+                          fontFamily: 'monospace',
+                          fontWeight: '700',
+                          fontSize: '13px',
+                          color: '#d4af37',
+                          background: 'rgba(212, 175, 55, 0.08)',
+                          border: '1px solid rgba(212, 175, 55, 0.25)',
+                          padding: '4px 8px',
+                          borderRadius: '6px'
+                        }}>
+                          {res.bookingReference}
+                        </span>
+                      </td>
+
+                      {/* Resident Info */}
+                      <td style={tdStyle}>
+                        <div style={{ color: '#ffffff', fontWeight: '600' }}>{res.guest?.fullName || 'Walk-in Resident'}</div>
+                        <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: '2px' }}>{res.guest?.phone || res.guest?.email}</div>
+                      </td>
+
+                      {/* Suite Assigned */}
+                      <td style={tdStyle}>
+                        <div style={{ color: '#ffffff', fontWeight: '600' }}>Suite #{res.room?.roomNumber}</div>
+                        <div style={{ color: '#d4af37', fontSize: '11px', marginTop: '2px' }}>{res.room?.roomType} • Floor {res.room?.floor}</div>
+                      </td>
+
+                      {/* Stay Duration */}
+                      <td style={tdStyle}>
+                        <div style={{ color: '#cbd5e1', fontSize: '12px' }}>
+                          <span style={{ color: '#94a3b8' }}>In:</span> {new Date(res.checkInDate).toLocaleDateString()}
+                        </div>
+                        <div style={{ color: '#cbd5e1', fontSize: '12px', marginTop: '2px' }}>
+                          <span style={{ color: '#94a3b8' }}>Out:</span> {new Date(res.checkOutDate).toLocaleDateString()}
+                        </div>
+                      </td>
+
+                      {/* Tariff */}
+                      <td style={tdStyle}>
+                        <span style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff' }}>
+                          ${res.roomCharges}
+                        </span>
+                      </td>
+
+                      {/* Status */}
+                      <td style={tdStyle}>
+                        <span style={{
+                          fontSize: '11px',
+                          fontWeight: '700',
+                          letterSpacing: '0.4px',
+                          padding: '4px 10px',
+                          borderRadius: '14px',
+                          background: statusBadgeStyle.bg,
+                          border: `1px solid ${statusBadgeStyle.border}`,
+                          color: statusBadgeStyle.color,
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '6px'
-                        }}
-                      >
-                        <LogOut size={14} /> Check-Out
-                      </button>
-                    )}
+                        }}>
+                          ● {res.status}
+                        </span>
+                      </td>
 
-                    {res.status === 'Checked-Out' && (
-                      <span style={{ color: '#10b981', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <CheckCircle2 size={14} /> Completed
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                      {/* Actions */}
+                      <td style={{ ...tdStyle, textAlign: 'center' }}>
+                        {res.status === 'Confirmed' && (
+                          <button
+                            onClick={() => handleCheckIn(res._id, res.room?.roomNumber)}
+                            style={{
+                              background: 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)',
+                              color: '#070b14',
+                              fontWeight: '700',
+                              padding: '7px 14px',
+                              fontSize: '11.5px',
+                              borderRadius: '8px',
+                              border: 'none',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              boxShadow: '0 2px 10px rgba(212, 175, 55, 0.25)'
+                            }}
+                          >
+                            <Key size={13} /> Check-In
+                          </button>
+                        )}
+
+                        {res.status === 'Checked-In' && (
+                          <button
+                            onClick={() => handleCheckOut(res._id, res.room?.roomNumber)}
+                            style={{
+                              background: 'rgba(244, 63, 94, 0.08)',
+                              border: '1px solid rgba(244, 63, 94, 0.3)',
+                              color: '#fb7185',
+                              padding: '7px 14px',
+                              fontSize: '11.5px',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              fontWeight: '600',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(244, 63, 94, 0.2)'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(244, 63, 94, 0.08)'}
+                          >
+                            <LogOut size={13} /> Check-Out
+                          </button>
+                        )}
+
+                        {res.status === 'Checked-Out' && (
+                          <span style={{ color: '#10b981', fontSize: '12px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <CheckCircle2 size={14} /> Completed
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* CREATE RESERVATION MODAL WITH PAST DATE BLOCKING */}
+      {/* ================= CREATE RESERVATION MODAL ================= */}
       {isModalOpen && (
         <div style={{
           position: 'fixed',
@@ -308,52 +447,70 @@ const Reservations = () => {
           left: 0,
           width: '100%',
           height: '100%',
-          background: 'rgba(0, 0, 0, 0.75)',
-          backdropFilter: 'blur(8px)',
+          background: 'rgba(0, 0, 0, 0.85)',
+          backdropFilter: 'blur(10px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 100,
+          zIndex: 1000,
           padding: '20px'
         }}>
-          <div className="luxury-card" style={{ width: '100%', maxWidth: '580px', padding: '30px', maxHeight: '90vh', overflowY: 'auto', border: '1px solid rgba(197, 168, 128, 0.3)' }}>
+          <div style={{
+            background: 'rgba(15, 23, 42, 0.98)',
+            border: '1px solid rgba(212, 175, 55, 0.35)',
+            borderRadius: '22px',
+            width: '100%',
+            maxWidth: '580px',
+            padding: '32px',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.9)'
+          }}>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <CalendarCheck size={20} color="var(--primary-gold)" />
-                <h3 className="luxury-heading" style={{ fontSize: '20px', color: '#fff' }}>Create Reservation</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ background: 'rgba(212, 175, 55, 0.15)', padding: '6px', borderRadius: '8px', color: '#d4af37' }}>
+                  <CalendarCheck size={20} />
+                </div>
+                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '21px', color: '#fff', margin: 0 }}>
+                  Create Desk Reservation
+                </h3>
               </div>
-              <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', color: '#cbd5e1', cursor: 'pointer' }}>
-                <X size={20} />
+              <button 
+                onClick={() => setIsModalOpen(false)} 
+                style={{ background: 'rgba(255,255,255,0.06)', border: 'none', color: '#cbd5e1', cursor: 'pointer', padding: '6px', borderRadius: '6px' }}
+              >
+                <X size={18} />
               </button>
             </div>
 
             {errorMsg && (
-              <div style={{ background: 'rgba(244, 63, 94, 0.15)', border: '1px solid var(--danger-rose)', color: '#fb7185', padding: '10px', borderRadius: '8px', fontSize: '13px', marginBottom: '16px' }}>
+              <div style={{ background: 'rgba(244, 63, 94, 0.15)', border: '1px solid rgba(244, 63, 94, 0.3)', color: '#fb7185', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', marginBottom: '16px' }}>
                 {errorMsg}
               </div>
             )}
 
             <form onSubmit={handleCreateReservation} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               
-              {/* Guest Mode Switcher */}
-              <div style={{ display: 'flex', gap: '10px', background: 'rgba(15,23,42,0.8)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+              {/* Segmented Guest Mode Switcher */}
+              <div style={{ display: 'flex', gap: '6px', background: 'rgba(7, 11, 20, 0.85)', padding: '4px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, guestMode: 'existing' })}
                   style={{
                     flex: 1,
                     padding: '8px',
-                    borderRadius: '6px',
+                    borderRadius: '8px',
                     border: 'none',
-                    background: formData.guestMode === 'existing' ? 'var(--primary-gold)' : 'transparent',
-                    color: formData.guestMode === 'existing' ? '#0f172a' : '#cbd5e1',
-                    fontWeight: '600',
+                    background: formData.guestMode === 'existing' ? 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)' : 'transparent',
+                    color: formData.guestMode === 'existing' ? '#070b14' : '#cbd5e1',
+                    fontWeight: '700',
                     cursor: 'pointer',
-                    fontSize: '12px'
+                    fontSize: '12px',
+                    transition: 'all 0.2s ease'
                   }}
                 >
-                  Existing Guest Profile
+                  Existing Resident Directory
                 </button>
                 <button
                   type="button"
@@ -361,106 +518,109 @@ const Reservations = () => {
                   style={{
                     flex: 1,
                     padding: '8px',
-                    borderRadius: '6px',
+                    borderRadius: '8px',
                     border: 'none',
-                    background: formData.guestMode === 'new' ? 'var(--primary-gold)' : 'transparent',
-                    color: formData.guestMode === 'new' ? '#0f172a' : '#cbd5e1',
-                    fontWeight: '600',
+                    background: formData.guestMode === 'new' ? 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)' : 'transparent',
+                    color: formData.guestMode === 'new' ? '#070b14' : '#cbd5e1',
+                    fontWeight: '700',
                     cursor: 'pointer',
-                    fontSize: '12px'
+                    fontSize: '12px',
+                    transition: 'all 0.2s ease'
                   }}
                 >
-                  + New Guest
+                  + New Walk-In Resident
                 </button>
               </div>
 
-              {/* Guest Profile Selection */}
+              {/* Guest Selection */}
               {formData.guestMode === 'existing' ? (
                 <div>
-                  <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Select Guest *</label>
+                  <label style={fieldLabelStyle}>Select Registered Resident *</label>
                   <select
                     required={formData.guestMode === 'existing'}
                     value={formData.guestId}
                     onChange={(e) => setFormData({ ...formData, guestId: e.target.value })}
-                    style={inputStyle}
+                    style={fieldInputStyle}
                   >
-                    <option value="">-- Choose Guest Profile --</option>
+                    <option value="">-- Choose Resident Profile --</option>
                     {guests.map((g) => (
-                      <option key={g._id} value={g._id}>{g.fullName} ({g.phone || g.email})</option>
+                      <option key={g._id} value={g._id} style={{ background: '#0d1527', color: '#fff' }}>
+                        {g.fullName} ({g.phone || g.email})
+                      </option>
                     ))}
                   </select>
                 </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div>
-                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Full Name *</label>
+                    <label style={fieldLabelStyle}>Full Name *</label>
                     <input
                       type="text"
                       required={formData.guestMode === 'new'}
                       placeholder="e.g. Tariq Khan"
                       value={formData.newGuestName}
                       onChange={(e) => setFormData({ ...formData, newGuestName: e.target.value })}
-                      style={inputStyle}
+                      style={fieldInputStyle}
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Phone Number *</label>
+                    <label style={fieldLabelStyle}>Phone Number *</label>
                     <input
                       type="text"
                       required={formData.guestMode === 'new'}
                       placeholder="+92 300 1234567"
                       value={formData.newGuestPhone}
                       onChange={(e) => setFormData({ ...formData, newGuestPhone: e.target.value })}
-                      style={inputStyle}
+                      style={fieldInputStyle}
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Email Address *</label>
+                    <label style={fieldLabelStyle}>Email Address *</label>
                     <input
                       type="email"
                       required={formData.guestMode === 'new'}
                       placeholder="guest@gmail.com"
                       value={formData.newGuestEmail}
                       onChange={(e) => setFormData({ ...formData, newGuestEmail: e.target.value })}
-                      style={inputStyle}
+                      style={fieldInputStyle}
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>ID / Passport # *</label>
+                    <label style={fieldLabelStyle}>CNIC / Passport Number *</label>
                     <input
                       type="text"
                       required={formData.guestMode === 'new'}
                       placeholder="42101-1234567-1"
                       value={formData.newGuestIdNumber}
                       onChange={(e) => setFormData({ ...formData, newGuestIdNumber: e.target.value })}
-                      style={inputStyle}
+                      style={fieldInputStyle}
                     />
                   </div>
                 </div>
               )}
 
-              {/* Room Selection */}
+              {/* Suite Selection */}
               <div>
-                <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Assign Available Room *</label>
+                <label style={fieldLabelStyle}>Assign Available Suite *</label>
                 <select
                   required
                   value={formData.roomId}
                   onChange={(e) => setFormData({ ...formData, roomId: e.target.value })}
-                  style={inputStyle}
+                  style={fieldInputStyle}
                 >
                   <option value="">-- Choose Available Suite --</option>
                   {rooms.map((rm) => (
-                    <option key={rm._id} value={rm._id}>
-                      Room #{rm.roomNumber} - {rm.roomType} (${rm.pricePerNight}/night)
+                    <option key={rm._id} value={rm._id} style={{ background: '#0d1527', color: '#fff' }}>
+                      Suite #{rm.roomNumber} - {rm.roomType} (${rm.pricePerNight} / night)
                     </option>
                   ))}
                 </select>
               </div>
 
               {/* DATES WITH BLOCKING */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Check-In Date *</label>
+                  <label style={fieldLabelStyle}>Arrival Date *</label>
                   <input
                     type="date"
                     required
@@ -474,39 +634,65 @@ const Reservations = () => {
                         checkOutDate: prev.checkOutDate <= newCheckIn ? newCheckIn : prev.checkOutDate
                       }));
                     }}
-                    style={inputStyle}
+                    style={fieldInputStyle}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Check-Out Date *</label>
+                  <label style={fieldLabelStyle}>Departure Date *</label>
                   <input
                     type="date"
                     required
                     min={formData.checkInDate || todayStr}
                     value={formData.checkOutDate}
                     onChange={(e) => setFormData({ ...formData, checkOutDate: e.target.value })}
-                    style={inputStyle}
+                    style={fieldInputStyle}
                   />
                 </div>
               </div>
 
               {/* Special Requests */}
               <div>
-                <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Special Requests / Notes</label>
+                <label style={fieldLabelStyle}>Special Arrival Requests / Notes</label>
                 <input
                   type="text"
-                  placeholder="e.g. Non-smoking room, High floor"
+                  placeholder="e.g. VIP Airport pickup, high floor requested"
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  style={inputStyle}
+                  style={fieldInputStyle}
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '10px' }}>
-                <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary">
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '6px' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setIsModalOpen(false)} 
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    color: '#cbd5e1',
+                    padding: '9px 18px',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '13px'
+                  }}
+                >
                   Cancel
                 </button>
-                <button type="submit" disabled={submitting} className="btn-gold">
+                <button 
+                  type="submit" 
+                  disabled={submitting} 
+                  style={{
+                    background: 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)',
+                    color: '#070b14',
+                    fontWeight: '700',
+                    fontSize: '13px',
+                    padding: '9px 22px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
                   {submitting ? 'Confirming...' : 'Create Reservation'}
                 </button>
               </div>
@@ -521,15 +707,35 @@ const Reservations = () => {
   );
 };
 
-const inputStyle = {
+const thStyle = {
+  padding: '14px 18px',
+  fontWeight: '600',
+  fontSize: '12px',
+  textTransform: 'uppercase',
+  letterSpacing: '0.8px'
+};
+
+const tdStyle = {
+  padding: '14px 18px'
+};
+
+const fieldLabelStyle = {
+  fontSize: '11.5px',
+  color: '#cbd5e1',
+  display: 'block',
+  marginBottom: '5px'
+};
+
+const fieldInputStyle = {
   width: '100%',
-  background: 'rgba(15, 23, 42, 0.8)',
-  border: '1px solid var(--border-color)',
-  padding: '8px 12px',
+  background: 'rgba(7, 11, 20, 0.85)',
+  border: '1px solid rgba(255, 255, 255, 0.12)',
+  padding: '10px 12px',
   borderRadius: '8px',
-  color: '#fff',
+  color: '#ffffff',
   fontSize: '13px',
-  outline: 'none'
+  outline: 'none',
+  boxSizing: 'border-box'
 };
 
 export default Reservations;
