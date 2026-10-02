@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import API from '../api/axios';
-import { BedDouble, Search, Sparkles, Filter, Check, X, Info, Calendar, Users, SlidersHorizontal } from 'lucide-react';
+import { BedDouble, Search, Sparkles, Check, X, Info } from 'lucide-react';
 
 const PublicRooms = () => {
   const [rooms, setRooms] = useState([]);
@@ -8,7 +8,7 @@ const PublicRooms = () => {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   
-  // Modals
+  // Modals State
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [roomSpecsModal, setRoomSpecsModal] = useState(null);
@@ -16,6 +16,7 @@ const PublicRooms = () => {
   const [submittingBooking, setSubmittingBooking] = useState(false);
 
   const todayStr = new Date().toISOString().split('T')[0];
+  const defaultCheckOut = new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0];
 
   const [bookingForm, setBookingForm] = useState({
     fullName: '',
@@ -23,14 +24,14 @@ const PublicRooms = () => {
     phone: '',
     idNumber: '',
     checkInDate: todayStr,
-    checkOutDate: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0],
+    checkOutDate: defaultCheckOut,
     adults: 2,
     children: 0,
     specialRequests: ''
   });
 
   const getRoomImg = (type) => {
-    switch(type) {
+    switch (type) {
       case 'Standard': return '/Images/room-standard.jpg';
       case 'Deluxe': return '/Images/room-deluxe.jpg';
       case 'Suite': return '/Images/room-suite.jpg';
@@ -39,6 +40,18 @@ const PublicRooms = () => {
       default: return '/Images/room-deluxe.jpg';
     }
   };
+
+  // Close modals on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setBookingModalOpen(false);
+        setRoomSpecsModal(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     const fetchRooms = async () => {
@@ -55,6 +68,7 @@ const PublicRooms = () => {
   }, []);
 
   const handleOpenBooking = (room) => {
+    if (room.status !== 'Available') return;
     setSelectedRoom(room);
     setBookingSuccess(null);
     setRoomSpecsModal(null);
@@ -73,26 +87,31 @@ const PublicRooms = () => {
         idNumber: bookingForm.idNumber || 'ONLINE-BOOK'
       });
 
+      const guestId = guestRes.data?.guest?._id || guestRes.data?._id;
+
       const resRes = await API.post('/reservations', {
-        guestId: guestRes.data.guest._id,
+        guestId,
         roomId: selectedRoom._id,
         checkInDate: bookingForm.checkInDate,
         checkOutDate: bookingForm.checkOutDate,
-        guestsCount: { adults: bookingForm.adults, children: bookingForm.children },
+        guestsCount: { 
+          adults: Number(bookingForm.adults), 
+          children: Number(bookingForm.children) 
+        },
         notes: bookingForm.specialRequests
       });
 
       setBookingSuccess(resRes.data.reservation);
     } catch (err) {
-      alert(err.response?.data?.message || 'Booking failed');
+      alert(err.response?.data?.message || 'Booking failed. Please verify dates and details.');
     } finally {
       setSubmittingBooking(false);
     }
   };
 
   const filteredRooms = rooms.filter((r) => {
-    const matchesSearch = r.roomNumber.toString().includes(search) || 
-                          r.roomType.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = r.roomNumber?.toString().includes(search) || 
+                          r.roomType?.toLowerCase().includes(search.toLowerCase());
     const matchesType = typeFilter ? r.roomType === typeFilter : true;
     return matchesSearch && matchesType;
   });
@@ -157,7 +176,7 @@ const PublicRooms = () => {
             />
           </div>
 
-          {/* Category Filter Pills (All Tiers Included) */}
+          {/* Category Filter Pills */}
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
             {[
               { label: 'All Suites', val: '' },
@@ -194,7 +213,7 @@ const PublicRooms = () => {
         {/* Live Count Bar */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', padding: '0 6px' }}>
           <span style={{ fontSize: '13px', color: '#94a3b8' }}>
-            Displaying <strong style={{ color: '#d4af37' }}>{filteredRooms.length}</strong> available residences
+            Displaying <strong style={{ color: '#d4af37' }}>{filteredRooms.length}</strong> residences
           </span>
           {typeFilter || search ? (
             <button 
@@ -206,7 +225,7 @@ const PublicRooms = () => {
           ) : null}
         </div>
 
-        {/* Rooms Grid (Auto-Fill Fixed Card Width: Never Stretches) */}
+        {/* Rooms Grid */}
         {loading ? (
           <div style={{ textAlign: 'center', color: '#d4af37', padding: '80px 0', fontSize: '15px' }}>
             Retrieving live suite catalog...
@@ -249,175 +268,184 @@ const PublicRooms = () => {
             justifyContent: 'center',
             gap: '32px'
           }}>
-            {filteredRooms.map((room) => (
-              <div 
-                key={room._id} 
-                style={{
-                  background: '#0d1527',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '18px',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  transition: 'all 0.25s ease',
-                  boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.7)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-4px)';
-                  e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.35)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-                }}
-              >
-                {/* Room Image */}
-                <div style={{ height: '230px', position: 'relative', overflow: 'hidden' }}>
-                  <img 
-                    src={getRoomImg(room.roomType)} 
-                    alt={room.roomType}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                  
-                  {/* Status Indicator */}
-                  <div style={{ position: 'absolute', top: '12px', right: '12px' }}>
-                    <span style={{
-                      background: room.status === 'Available' ? 'rgba(16, 185, 129, 0.92)' : 'rgba(244, 63, 94, 0.92)',
-                      color: '#ffffff',
-                      fontSize: '10.5px',
-                      fontWeight: '700',
-                      letterSpacing: '0.5px',
-                      textTransform: 'uppercase',
-                      padding: '4px 10px',
-                      borderRadius: '20px',
-                      backdropFilter: 'blur(6px)'
-                    }}>
-                      ● {room.status}
-                    </span>
-                  </div>
-
-                  {/* Room Meta Tag */}
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '12px',
-                    left: '12px',
-                    background: 'rgba(7, 11, 20, 0.88)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    padding: '5px 12px',
-                    borderRadius: '6px',
-                    fontSize: '11px',
-                    color: '#d4af37',
-                    fontWeight: '600'
-                  }}>
-                    Suite #{room.roomNumber} • Floor {room.floor}
-                  </div>
-                </div>
-
-                {/* Details Body */}
-                <div style={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                  <div>
-                    <h3 style={{
-                      fontFamily: "'Playfair Display', Georgia, serif",
-                      fontSize: '21px',
-                      color: '#ffffff',
-                      margin: '0 0 8px 0'
-                    }}>
-                      {room.roomType}
-                    </h3>
-
-                    <p style={{ color: '#94a3b8', fontSize: '13px', lineHeight: '1.6', marginBottom: '16px', minHeight: '42px' }}>
-                      {room.description || 'Master-crafted suite offering expansive city views, premium Italian linens, and 24/7 dedicated room concierge.'}
-                    </p>
-
-                    {/* Amenities Badges */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '20px' }}>
-                      {room.amenities && room.amenities.length > 0 ? (
-                        room.amenities.slice(0, 3).map((am, i) => (
-                          <span key={i} style={{
-                            background: 'rgba(255, 255, 255, 0.04)',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            fontSize: '11px',
-                            color: '#cbd5e1',
-                            padding: '3px 8px',
-                            borderRadius: '4px'
-                          }}>
-                            {am}
-                          </span>
-                        ))
-                      ) : (
-                        ['High-Speed Wifi', 'King Bed', 'Skyline View'].map((item, i) => (
-                          <span key={i} style={{
-                            background: 'rgba(255, 255, 255, 0.04)',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            fontSize: '11px',
-                            color: '#cbd5e1',
-                            padding: '3px 8px',
-                            borderRadius: '4px'
-                          }}>
-                            {item}
-                          </span>
-                        ))
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Price & Action Buttons */}
-                  <div style={{
-                    borderTop: '1px solid rgba(255,255,255,0.06)',
-                    paddingTop: '16px',
+            {filteredRooms.map((room) => {
+              const isAvailable = room.status === 'Available';
+              return (
+                <div 
+                  key={room._id} 
+                  style={{
+                    background: '#0d1527',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '18px',
+                    overflow: 'hidden',
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between'
-                  }}>
-                    <div>
-                      <span style={{ fontSize: '24px', fontWeight: '700', color: '#d4af37' }}>${room.pricePerNight}</span>
-                      <span style={{ fontSize: '12px', color: '#94a3b8' }}> / night</span>
+                    flexDirection: 'column',
+                    transition: 'all 0.25s ease',
+                    boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.7)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-4px)';
+                    e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.35)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                  }}
+                >
+                  {/* Room Image */}
+                  <div style={{ height: '230px', position: 'relative', overflow: 'hidden' }}>
+                    <img 
+                      src={getRoomImg(room.roomType)} 
+                      alt={room.roomType}
+                      onError={(e) => { e.target.onerror = null; e.target.src = '/Images/room-deluxe.jpg'; }}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                    
+                    {/* Status Indicator */}
+                    <div style={{ position: 'absolute', top: '12px', right: '12px' }}>
+                      <span style={{
+                        background: isAvailable ? 'rgba(16, 185, 129, 0.92)' : 'rgba(244, 63, 94, 0.92)',
+                        color: '#ffffff',
+                        fontSize: '10.5px',
+                        fontWeight: '700',
+                        letterSpacing: '0.5px',
+                        textTransform: 'uppercase',
+                        padding: '4px 10px',
+                        borderRadius: '20px',
+                        backdropFilter: 'blur(6px)'
+                      }}>
+                        ● {room.status}
+                      </span>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        onClick={() => setRoomSpecsModal(room)}
-                        title="Suite Details"
-                        style={{
-                          background: 'rgba(255,255,255,0.05)',
-                          border: '1px solid rgba(255,255,255,0.12)',
-                          color: '#cbd5e1',
-                          padding: '9px 12px',
-                          borderRadius: '8px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center'
-                        }}
-                      >
-                        <Info size={14} />
-                      </button>
+                    {/* Room Meta Tag */}
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '12px',
+                      left: '12px',
+                      background: 'rgba(7, 11, 20, 0.88)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      padding: '5px 12px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      color: '#d4af37',
+                      fontWeight: '600'
+                    }}>
+                      Suite #{room.roomNumber} • Floor {room.floor}
+                    </div>
+                  </div>
 
-                      <button 
-                        onClick={() => handleOpenBooking(room)}
-                        style={{
-                          background: 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)',
-                          color: '#070b14',
-                          fontWeight: '700',
-                          fontSize: '12px',
-                          letterSpacing: '0.4px',
-                          textTransform: 'uppercase',
-                          padding: '9px 18px',
-                          borderRadius: '8px',
-                          border: 'none',
-                          cursor: 'pointer',
-                          boxShadow: '0 3px 12px rgba(212, 175, 55, 0.25)',
-                          transition: 'transform 0.15s ease'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
-                        onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                      >
-                        Book Suite
-                      </button>
+                  {/* Details Body */}
+                  <div style={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div>
+                      <h3 style={{
+                        fontFamily: "'Playfair Display', Georgia, serif",
+                        fontSize: '21px',
+                        color: '#ffffff',
+                        margin: '0 0 8px 0'
+                      }}>
+                        {room.roomType}
+                      </h3>
+
+                      <p style={{ color: '#94a3b8', fontSize: '13px', lineHeight: '1.6', marginBottom: '16px', minHeight: '42px' }}>
+                        {room.description || 'Master-crafted suite offering expansive city views, premium Italian linens, and 24/7 dedicated room concierge.'}
+                      </p>
+
+                      {/* Amenities Badges */}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '20px' }}>
+                        {room.amenities && room.amenities.length > 0 ? (
+                          room.amenities.slice(0, 3).map((am, i) => (
+                            <span key={i} style={{
+                              background: 'rgba(255, 255, 255, 0.04)',
+                              border: '1px solid rgba(255, 255, 255, 0.08)',
+                              fontSize: '11px',
+                              color: '#cbd5e1',
+                              padding: '3px 8px',
+                              borderRadius: '4px'
+                            }}>
+                              {am}
+                            </span>
+                          ))
+                        ) : (
+                          ['High-Speed Wifi', 'King Bed', 'Skyline View'].map((item, i) => (
+                            <span key={i} style={{
+                              background: 'rgba(255, 255, 255, 0.04)',
+                              border: '1px solid rgba(255, 255, 255, 0.08)',
+                              fontSize: '11px',
+                              color: '#cbd5e1',
+                              padding: '3px 8px',
+                              borderRadius: '4px'
+                            }}>
+                              {item}
+                            </span>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Price & Action Buttons */}
+                    <div style={{
+                      borderTop: '1px solid rgba(255,255,255,0.06)',
+                      paddingTop: '16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}>
+                      <div>
+                        <span style={{ fontSize: '24px', fontWeight: '700', color: '#d4af37' }}>${room.pricePerNight}</span>
+                        <span style={{ fontSize: '12px', color: '#94a3b8' }}> / night</span>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={() => setRoomSpecsModal(room)}
+                          title="Suite Details"
+                          style={{
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.12)',
+                            color: '#cbd5e1',
+                            padding: '9px 12px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <Info size={14} />
+                        </button>
+
+                        <button 
+                          onClick={() => handleOpenBooking(room)}
+                          disabled={!isAvailable}
+                          style={{
+                            background: isAvailable ? 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)' : '#334155',
+                            color: isAvailable ? '#070b14' : '#94a3b8',
+                            fontWeight: '700',
+                            fontSize: '12px',
+                            letterSpacing: '0.4px',
+                            textTransform: 'uppercase',
+                            padding: '9px 18px',
+                            borderRadius: '8px',
+                            border: 'none',
+                            cursor: isAvailable ? 'pointer' : 'not-allowed',
+                            boxShadow: isAvailable ? '0 3px 12px rgba(212, 175, 55, 0.25)' : 'none',
+                            transition: 'transform 0.15s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (isAvailable) e.currentTarget.style.transform = 'translateY(-1px)';
+                          }}
+                          onMouseLeave={(e) => {
+                            if (isAvailable) e.currentTarget.style.transform = 'translateY(0)';
+                          }}
+                        >
+                          {isAvailable ? 'Book Suite' : 'Occupied'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -425,20 +453,24 @@ const PublicRooms = () => {
 
       {/* MODAL 1: QUICK SPECS DRAWER */}
       {roomSpecsModal && (
-        <div style={modalBackdropStyle}>
-          <div style={{
-            background: 'rgba(15, 23, 42, 0.98)',
-            border: '1px solid rgba(212, 175, 55, 0.35)',
-            borderRadius: '20px',
-            width: '100%',
-            maxWidth: '520px',
-            overflow: 'hidden',
-            boxShadow: '0 25px 60px rgba(0,0,0,0.85)'
-          }}>
+        <div style={modalBackdropStyle} onClick={() => setRoomSpecsModal(null)}>
+          <div 
+            style={{
+              background: 'rgba(15, 23, 42, 0.98)',
+              border: '1px solid rgba(212, 175, 55, 0.35)',
+              borderRadius: '20px',
+              width: '100%',
+              maxWidth: '520px',
+              overflow: 'hidden',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.85)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div style={{ height: '220px', position: 'relative' }}>
               <img 
                 src={getRoomImg(roomSpecsModal.roomType)} 
                 alt={roomSpecsModal.roomType} 
+                onError={(e) => { e.target.onerror = null; e.target.src = '/Images/room-deluxe.jpg'; }}
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
               <button 
@@ -476,7 +508,22 @@ const PublicRooms = () => {
 
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button onClick={() => setRoomSpecsModal(null)} style={{ flex: 1, padding: '10px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', cursor: 'pointer' }}>Close</button>
-                <button onClick={() => handleOpenBooking(roomSpecsModal)} style={{ flex: 2, padding: '10px', borderRadius: '8px', background: 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)', color: '#070b14', fontWeight: '700', border: 'none', cursor: 'pointer' }}>Reserve Suite</button>
+                <button 
+                  onClick={() => handleOpenBooking(roomSpecsModal)} 
+                  disabled={roomSpecsModal.status !== 'Available'}
+                  style={{ 
+                    flex: 2, 
+                    padding: '10px', 
+                    borderRadius: '8px', 
+                    background: roomSpecsModal.status === 'Available' ? 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)' : '#334155', 
+                    color: roomSpecsModal.status === 'Available' ? '#070b14' : '#94a3b8', 
+                    fontWeight: '700', 
+                    border: 'none', 
+                    cursor: roomSpecsModal.status === 'Available' ? 'pointer' : 'not-allowed' 
+                  }}
+                >
+                  {roomSpecsModal.status === 'Available' ? 'Reserve Suite' : 'Currently Unavailable'}
+                </button>
               </div>
             </div>
           </div>
@@ -485,18 +532,21 @@ const PublicRooms = () => {
 
       {/* MODAL 2: ONLINE ROOM BOOKING */}
       {bookingModalOpen && selectedRoom && (
-        <div style={modalBackdropStyle}>
-          <div style={{
-            background: 'rgba(15, 23, 42, 0.98)',
-            border: '1px solid rgba(212, 175, 55, 0.35)',
-            borderRadius: '20px',
-            width: '100%',
-            maxWidth: '540px',
-            padding: '30px',
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            boxShadow: '0 25px 60px rgba(0,0,0,0.85)'
-          }}>
+        <div style={modalBackdropStyle} onClick={() => setBookingModalOpen(false)}>
+          <div 
+            style={{
+              background: 'rgba(15, 23, 42, 0.98)',
+              border: '1px solid rgba(212, 175, 55, 0.35)',
+              borderRadius: '20px',
+              width: '100%',
+              maxWidth: '540px',
+              padding: '30px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.85)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>
                 <h3 style={{ fontFamily: "'Playfair Display', serif", color: '#fff', fontSize: '21px', margin: 0 }}>
@@ -625,7 +675,9 @@ const PublicRooms = () => {
                         setBookingForm((prev) => ({
                           ...prev,
                           checkInDate: newIn,
-                          checkOutDate: prev.checkOutDate <= newIn ? newIn : prev.checkOutDate
+                          checkOutDate: prev.checkOutDate <= newIn 
+                            ? new Date(new Date(newIn).getTime() + 86400000).toISOString().split('T')[0]
+                            : prev.checkOutDate
                         }));
                       }}
                       style={fieldInputStyle}
@@ -639,6 +691,33 @@ const PublicRooms = () => {
                       min={bookingForm.checkInDate || todayStr}
                       value={bookingForm.checkOutDate}
                       onChange={(e) => setBookingForm({ ...bookingForm, checkOutDate: e.target.value })}
+                      style={fieldInputStyle}
+                    />
+                  </div>
+                </div>
+
+                {/* Adults and Children Inputs */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={fieldLabelStyle}>Adults *</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      required
+                      value={bookingForm.adults}
+                      onChange={(e) => setBookingForm({ ...bookingForm, adults: e.target.value })}
+                      style={fieldInputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label style={fieldLabelStyle}>Children</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="6"
+                      value={bookingForm.children}
+                      onChange={(e) => setBookingForm({ ...bookingForm, children: e.target.value })}
                       style={fieldInputStyle}
                     />
                   </div>
@@ -681,7 +760,7 @@ const PublicRooms = () => {
                       padding: '9px 22px',
                       borderRadius: '8px',
                       border: 'none',
-                      cursor: 'pointer',
+                      cursor: submittingBooking ? 'not-allowed' : 'pointer',
                       fontSize: '13px'
                     }}
                   >
