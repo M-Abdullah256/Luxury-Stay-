@@ -3,18 +3,14 @@ import API from '../api/axios';
 import { 
   Sparkles, 
   ArrowRight, 
-  CheckCircle2, 
   Star, 
   X, 
   BellRing, 
   Check, 
   Info, 
-  Shield, 
-  Clock, 
-  Award, 
   Car, 
   Anchor, 
-  GlassWater 
+  GlassWater
 } from 'lucide-react';
 
 const LandingPage = () => {
@@ -22,30 +18,38 @@ const LandingPage = () => {
   const [filteredRooms, setFilteredRooms] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Twin Seamless Video Crossfade State & Refs
-  const [activeVideo, setActiveVideo] = useState(0);
-  const videoRef0 = useRef(null);
-  const videoRef1 = useRef(null);
+  // Video Scrubbing Engine Refs
+  const scrollSectionRef = useRef(null);
+  const videoRef = useRef(null);
+  const targetProgressRef = useRef(0);
+  const currentProgressRef = useRef(0);
+  const isSeekingRef = useRef(false);
+  const pendingTimeRef = useRef(null);
+  const lastSeekTimeRef = useRef(0);
 
-  // Modals
+  // Hero Opening Title Fade
+  const [heroTitleOpacity, setHeroTitleOpacity] = useState(1);
+
+  // Laguna Al-Sha'ab Arch Scroll Engine Refs & State
+  const showcaseSectionRef = useRef(null);
+  const targetShowcaseProgressRef = useRef(0);
+  const currentShowcaseProgressRef = useRef(0);
+  const [showcaseProgress, setShowcaseProgress] = useState(0);
+
+  // Modals State
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [roomDetailModal, setRoomDetailModal] = useState(null);
   const [bookingSuccess, setBookingSuccess] = useState(null);
   const [submittingBooking, setSubmittingBooking] = useState(false);
-
-  // Services & Feedback States
   const [serviceModalOpen, setServiceModalOpen] = useState(false);
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
 
-  // Active Category Filter
   const [activeCategory, setActiveCategory] = useState('All');
 
-  // Dates
   const todayStr = new Date().toISOString().split('T')[0];
   const defaultCheckOut = new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0];
 
-  // Booking Form State
   const [bookingForm, setBookingForm] = useState({
     fullName: '',
     email: '',
@@ -85,7 +89,6 @@ const LandingPage = () => {
     }
   };
 
-  // Close modals on Escape key press
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
@@ -106,13 +109,118 @@ const LandingPage = () => {
         const list = res.data.rooms || [];
         setRooms(list);
         setFilteredRooms(list);
-        setLoading(false);
       } catch (err) {
         console.error('Error loading rooms:', err);
+      } finally {
         setLoading(false);
       }
     };
     fetchRooms();
+  }, []);
+
+  // ================= HARDWARE-ACCELERATED ULTRA-SMOOTH SEEK QUEUE =================
+  const executeSeek = (targetTime) => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (Math.abs(targetTime - lastSeekTimeRef.current) < 0.035) {
+      return;
+    }
+
+    if (isSeekingRef.current) {
+      pendingTimeRef.current = targetTime;
+    } else {
+      isSeekingRef.current = true;
+      lastSeekTimeRef.current = targetTime;
+      
+      if ('fastSeek' in video) {
+        video.fastSeek(targetTime);
+      } else {
+        video.currentTime = targetTime;
+      }
+    }
+  };
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.pause();
+
+    const handleSeeked = () => {
+      if (pendingTimeRef.current !== null) {
+        const next = pendingTimeRef.current;
+        pendingTimeRef.current = null;
+        lastSeekTimeRef.current = next;
+        
+        if ('fastSeek' in video) {
+          video.fastSeek(next);
+        } else {
+          video.currentTime = next;
+        }
+      } else {
+        isSeekingRef.current = false;
+      }
+    };
+
+    video.addEventListener('seeked', handleSeeked);
+
+    // Scroll Handler
+    const onScroll = () => {
+      if (scrollSectionRef.current) {
+        const rect = scrollSectionRef.current.getBoundingClientRect();
+        const totalScroll = rect.height - window.innerHeight;
+        const currentScroll = -rect.top;
+        let progress = currentScroll / totalScroll;
+        targetProgressRef.current = Math.max(0, Math.min(1, progress));
+      }
+
+      if (showcaseSectionRef.current) {
+        const sRect = showcaseSectionRef.current.getBoundingClientRect();
+        const sTotalScroll = sRect.height - window.innerHeight;
+        const sCurrentScroll = -sRect.top;
+        const sProgress = Math.max(0, Math.min(1, sCurrentScroll / (sTotalScroll > 0 ? sTotalScroll : 1)));
+        targetShowcaseProgressRef.current = sProgress;
+      }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    // Physics Lerp Loop (Silky 60fps)
+    let animId;
+    const renderLoop = () => {
+      // 1. Video Lerp
+      const diff = targetProgressRef.current - currentProgressRef.current;
+      if (Math.abs(diff) > 0.0002) {
+        currentProgressRef.current += diff * 0.12;
+        const p = currentProgressRef.current;
+
+        if (video.duration && !isNaN(video.duration)) {
+          executeSeek(video.duration * p);
+        }
+
+        const newOpacity = Math.max(0, 1 - (p / 0.18));
+        setHeroTitleOpacity(newOpacity);
+      }
+
+      // 2. Showcase Lerp with damping
+      const sDiff = targetShowcaseProgressRef.current - currentShowcaseProgressRef.current;
+      if (Math.abs(sDiff) > 0.0001) {
+        currentShowcaseProgressRef.current += sDiff * 0.09;
+        setShowcaseProgress(currentShowcaseProgressRef.current);
+      }
+
+      animId = requestAnimationFrame(renderLoop);
+    };
+
+    animId = requestAnimationFrame(renderLoop);
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      video.removeEventListener('seeked', handleSeeked);
+      cancelAnimationFrame(animId);
+    };
   }, []);
 
   const handleCategoryFilter = (category) => {
@@ -121,30 +229,6 @@ const LandingPage = () => {
       setFilteredRooms(rooms);
     } else {
       setFilteredRooms(rooms.filter(r => r.roomType?.toLowerCase().includes(category.toLowerCase())));
-    }
-  };
-
-  // Seamless Video Crossfade with Pause Handling
-  const handleTimeUpdate = (e) => {
-    const video = e.target;
-    if (!video.duration) return;
-
-    if (video.currentTime >= video.duration - 0.8) {
-      if (activeVideo === 0 && videoRef1.current) {
-        videoRef1.current.currentTime = 0;
-        videoRef1.current.play().catch(() => {});
-        setActiveVideo(1);
-        setTimeout(() => {
-          if (videoRef0.current) videoRef0.current.pause();
-        }, 800);
-      } else if (activeVideo === 1 && videoRef0.current) {
-        videoRef0.current.currentTime = 0;
-        videoRef0.current.play().catch(() => {});
-        setActiveVideo(0);
-        setTimeout(() => {
-          if (videoRef1.current) videoRef1.current.pause();
-        }, 800);
-      }
     }
   };
 
@@ -181,7 +265,7 @@ const LandingPage = () => {
 
       setBookingSuccess(resRes.data.reservation);
     } catch (err) {
-      alert(err.response?.data?.message || 'Online booking failed. Please verify dates.');
+      alert(err.response?.data?.message || 'Online booking failed.');
     } finally {
       setSubmittingBooking(false);
     }
@@ -200,7 +284,7 @@ const LandingPage = () => {
       setServiceForm({ roomNumber: '', guestName: '', serviceType: 'Wake-up Call', details: '' });
       alert('Your concierge request has been relayed to the private butler team.');
     } catch (err) {
-      alert(err.response?.data?.message || 'Service request submitted to concierge team.');
+      alert('Service request submitted to concierge team.');
       setServiceModalOpen(false);
     }
   };
@@ -221,235 +305,564 @@ const LandingPage = () => {
       });
       setFeedbackModalOpen(false);
       setFeedbackForm({ guestName: '', suiteStayed: '', cleanliness: 5, service: 5, roomComfort: 5, comments: '' });
-      alert('Thank you! Your verified feedback has been submitted to LuxuryStay Management.');
+      alert('Thank you! Your verified feedback has been submitted.');
     } catch (err) {
-      alert(err.response?.data?.message || 'Thank you for sharing your feedback with management!');
+      alert('Thank you for sharing your feedback!');
       setFeedbackModalOpen(false);
     }
   };
 
-  return (
-    <div style={{ background: 'transparent', color: '#f8fafc', overflowX: 'hidden', minHeight: '100vh' }}>
+  const showcaseSlides = [
+    {
+      tag: 'Sanctuary of Distinction',
+      title: 'THE PRESIDENTIAL SUITES',
+      desc: 'Master-crafted private suites featuring polished black Italian marble, gold inlay architecture, and dedicated 24-hour private butler craftsmanship.',
+      img: '/Images/room-presidential.jpg',
+      customImg: '/Images/showcase-suite.jpg'
+    },
+    {
+      tag: 'Haute Cuisine & Heritage',
+      title: 'THE GRAND FINE DINING',
+      desc: 'Opulent crystal chandeliers reflecting over mirror-finish tables, hosting Michelin-inspired culinary artistry and curated wine tastings.',
+      img: '/Images/amenity-dining.jpg',
+      customImg: '/Images/showcase-dining.jpg'
+    },
+    {
+      tag: 'Nightlife & Rare Cellar',
+      title: 'THE AMBER BAR & CELLAR',
+      desc: 'A monumental honey-amber backlit onyx bar serving rare vintage spirits and hand-rolled cigars, with live stay billing integration.',
+      img: '/Images/experience-lounge.jpg',
+      customImg: '/Images/showcase-bar.jpg'
+    }
+  ];
+
+  // ================= EXACT LAGUNA AL-SHA'AB ARCH CALCULATIONS =================
+  const clamp = (val, min, max) => Math.min(Math.max(val, min), max);
+
+  // 1. Slide 0 Arch Expand (0.00 -> 0.24)
+  const p0 = clamp(showcaseProgress / 0.24, 0, 1);
+  const arch0Width = 68 + p0 * 32; // 68vw -> 100vw
+  const arch0Height = 65 + p0 * 35; // 65vh -> 100vh
+  const arch0Radius = (1 - p0) * 260; // 260px -> 0px
+  const intro0Opacity = clamp(1 - p0 * 2.2, 0, 1); // Intro text disappears
+  const slide0TitleOpacity = clamp((p0 - 0.45) * 1.9, 0, 1); // Main title appears
+
+  // 2. Slide 1 Arch Rise & Expand (0.30 -> 0.62)
+  const p1 = clamp((showcaseProgress - 0.30) / 0.32, 0, 1);
+  const slide1Y = (1 - p1) * 105; // 105% -> 0%
+  const slide1Width = 72 + p1 * 28; // 72vw -> 100vw
+  const slide1Height = 70 + p1 * 30; // 70vh -> 100vh
+  const slide1Radius = (1 - p1) * 240; // 240px -> 0px
+  const slide1TitleOpacity = clamp((p1 - 0.4) * 2.0, 0, 1);
+  const slide1ImgParallax = (1 - p1) * -22;
+
+  // 3. Slide 2 Arch Rise & Expand (0.66 -> 0.96)
+  const p2 = clamp((showcaseProgress - 0.66) / 0.30, 0, 1);
+  const slide2Y = (1 - p2) * 105; // 105% -> 0%
+  const slide2Width = 72 + p2 * 28; // 72vw -> 100vw
+  const slide2Height = 70 + p2 * 30; // 70vh -> 100vh
+  const slide2Radius = (1 - p2) * 240; // 240px -> 0px
+  const slide2TitleOpacity = clamp((p2 - 0.4) * 2.0, 0, 1);
+  const slide2ImgParallax = (1 - p2) * -22;
+
+  // Active indicator dot
+  const activeDot = showcaseProgress < 0.35 ? 0 : showcaseProgress < 0.68 ? 1 : 2;
+
+ return (
+  <div style={{ 
+    background: 'transparent',
+    color: '#f8fafc', 
+    minHeight: '100vh', 
+    position: 'relative' 
+  }}>
       
-      {/* ================= 1. HERO SECTION ================= */}
-      <section style={{
-        position: 'relative',
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        textAlign: 'center',
-        padding: '140px 24px 80px 24px',
-        overflow: 'hidden'
-      }}>
-        {/* Layer 1 Video */}
-        <video
-          ref={videoRef0}
-          autoPlay
-          muted
-          playsInline
-          onTimeUpdate={activeVideo === 0 ? handleTimeUpdate : undefined}
-          poster="/Images/hero-bg.jpg"
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            zIndex: 0,
-            opacity: activeVideo === 0 ? 0.95 : 0,
-            transition: 'opacity 0.8s ease-in-out',
-            filter: 'brightness(0.9) contrast(1.05)'
-          }}
-        >
-          <source src="/Videos/hero-bg.mp4" type="video/mp4" />
-        </video>
-
-        {/* Layer 2 Video */}
-        <video
-          ref={videoRef1}
-          muted
-          playsInline
-          onTimeUpdate={activeVideo === 1 ? handleTimeUpdate : undefined}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            zIndex: 0,
-            opacity: activeVideo === 1 ? 0.95 : 0,
-            transition: 'opacity 0.8s ease-in-out',
-            filter: 'brightness(0.9) contrast(1.05)'
-          }}
-        >
-          <source src="/Videos/hero-bg.mp4" type="video/mp4" />
-        </video>
-
-        {/* Radial Dark Vignette */}
+      {/* ================= 1. VIDEO HERO SECTION ================= */}
+      <section 
+        ref={scrollSectionRef} 
+        style={{ 
+          height: '280vh', 
+          position: 'relative'
+        }}
+      >
         <div style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'radial-gradient(ellipse at center, rgba(5, 8, 17, 0.2) 0%, rgba(5, 8, 17, 0.6) 65%, #050811 100%)',
+          position: 'sticky',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100vh',
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           zIndex: 1
-        }} />
+        }}>
+          <video
+            ref={videoRef}
+            src="/Videos/hotel-scroll.mp4"
+            playsInline
+            muted
+            preload="auto"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              filter: 'brightness(0.9) contrast(1.05)'
+            }}
+          />
 
-        <div style={{ maxWidth: '980px', position: 'relative', zIndex: 2 }}>
-          
           <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '10px',
-            background: 'rgba(5, 8, 17, 0.75)',
-            border: '1px solid rgba(212, 175, 55, 0.4)',
-            backdropFilter: 'blur(12px)',
-            padding: '8px 24px',
-            borderRadius: '50px',
-            marginBottom: '30px',
-            boxShadow: '0 8px 25px rgba(0,0,0,0.6)'
+            position: 'absolute',
+            inset: 0,
+            background: 'radial-gradient(ellipse at center, rgba(5,8,17,0.1) 0%, rgba(5,8,17,0.5) 75%, rgba(5,8,17,0.85) 100%)',
+            pointerEvents: 'none'
+          }} />
+
+          {/* Top Quick Concierge Desk */}
+          <div style={{
+            position: 'absolute',
+            top: '32px',
+            right: '32px',
+            zIndex: 10
           }}>
-            <Sparkles size={14} color="#d4af37" />
-            <span style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '3px', textTransform: 'uppercase', color: '#f8fafc' }}>
-              A World of Pure Distinction
-            </span>
-          </div>
-
-          <h1 style={{
-            fontFamily: "'Playfair Display', Georgia, serif",
-            fontSize: 'clamp(44px, 6.5vw, 84px)',
-            color: '#ffffff',
-            fontWeight: '600',
-            lineHeight: '1.08',
-            letterSpacing: '-0.5px',
-            marginBottom: '24px',
-            textShadow: '0 4px 35px rgba(0, 0, 0, 0.9)'
-          }}>
-            Where Bespoke Grandeur Meets <br />
-            <span style={{
-              fontStyle: 'italic',
-              background: 'linear-gradient(135deg, #ffffff 0%, #fef08a 50%, #d4af37 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
-            }}>
-              Unrivaled Hospitality
-            </span>
-          </h1>
-
-          <p style={{
-            fontSize: 'clamp(15px, 1.8vw, 19px)',
-            color: '#e2e8f0',
-            lineHeight: '1.75',
-            maxWidth: '660px',
-            margin: '0 auto 44px auto',
-            fontWeight: '300',
-            textShadow: '0 2px 14px rgba(0,0,0,0.9)'
-          }}>
-            Discover a rare sanctuary of calm elegance, private butler craftsmanship, and Michelin-inspired culinary artistry.
-          </p>
-
-          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
-            <a 
-              href="#rooms" 
-              style={{
-                textDecoration: 'none',
-                background: 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)',
-                color: '#070b14',
-                fontWeight: '700',
-                fontSize: '13px',
-                letterSpacing: '1px',
-                textTransform: 'uppercase',
-                padding: '16px 36px',
-                borderRadius: '40px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '10px',
-                boxShadow: '0 8px 30px rgba(212, 175, 55, 0.35)',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-            >
-              <span>View Residences</span>
-              <ArrowRight size={16} />
-            </a>
-
             <button 
               onClick={() => setServiceModalOpen(true)}
               style={{
-                background: 'rgba(5, 8, 17, 0.65)',
-                border: '1px solid rgba(255, 255, 255, 0.25)',
+                background: 'rgba(5, 8, 17, 0.75)',
+                border: '1px solid rgba(212, 175, 55, 0.4)',
                 color: '#ffffff',
-                padding: '16px 32px',
-                fontSize: '13px',
+                padding: '10px 20px',
+                fontSize: '12px',
                 fontWeight: '600',
-                letterSpacing: '0.5px',
-                borderRadius: '40px',
+                letterSpacing: '1px',
+                textTransform: 'uppercase',
+                borderRadius: '30px',
                 cursor: 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '10px',
+                gap: '8px',
                 backdropFilter: 'blur(10px)',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(212, 175, 55, 0.15)';
-                e.currentTarget.style.borderColor = '#d4af37';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(5, 8, 17, 0.65)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.25)';
+                transition: 'all 0.2s ease'
               }}
             >
-              <BellRing size={16} color="#d4af37" />
-              <span>Private Concierge</span>
+              <BellRing size={14} color="#d4af37" />
+              <span>Concierge</span>
             </button>
           </div>
 
+          {/* ================= OPENING HERO TITLE ================= */}
           <div style={{
-            marginTop: '70px',
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '40px',
-            flexWrap: 'wrap'
+            position: 'relative',
+            zIndex: 4,
+            textAlign: 'center',
+            maxWidth: '960px',
+            padding: '0 24px',
+            opacity: heroTitleOpacity,
+            transform: `translateY(-${(1 - heroTitleOpacity) * 35}px)`,
+            pointerEvents: heroTitleOpacity > 0.1 ? 'auto' : 'none',
+            transition: 'opacity 0.1s linear, transform 0.1s linear'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#cbd5e1', fontSize: '13px' }}>
-              <Award size={16} color="#d4af37" /> 5-Star International Diamond
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'rgba(5, 8, 17, 0.75)',
+              border: '1px solid rgba(212, 175, 55, 0.4)',
+              backdropFilter: 'blur(12px)',
+              padding: '8px 24px',
+              borderRadius: '50px',
+              marginBottom: '24px',
+              boxShadow: '0 8px 25px rgba(0,0,0,0.6)'
+            }}>
+              <Sparkles size={13} color="#d4af37" />
+              <span style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '3px', textTransform: 'uppercase', color: '#f8fafc' }}>
+                LuxuryStay Grand Hotel & Residences
+              </span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#cbd5e1', fontSize: '13px' }}>
-              <Clock size={16} color="#d4af37" /> 24/7 Dedicated Butler Desk
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#cbd5e1', fontSize: '13px' }}>
-              <Shield size={16} color="#d4af37" /> 100% Discretion & Privacy
-            </div>
+
+            <h1 style={{
+              fontFamily: "'Playfair Display', Georgia, serif",
+              fontSize: 'clamp(40px, 6vw, 82px)',
+              color: '#ffffff',
+              fontWeight: '600',
+              lineHeight: '1.08',
+              letterSpacing: '-0.5px',
+              marginBottom: '20px',
+              textShadow: '0 4px 35px rgba(0, 0, 0, 0.95)'
+            }}>
+              Where Bespoke Grandeur Meets <br />
+              <span style={{
+                fontStyle: 'italic',
+                background: 'linear-gradient(135deg, #ffffff 0%, #fef08a 50%, #d4af37 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}>
+                Unrivaled Hospitality
+              </span>
+            </h1>
+
+            <p style={{
+              fontSize: 'clamp(14.5px, 1.8vw, 17.5px)',
+              color: '#e2e8f0',
+              lineHeight: '1.75',
+              maxWidth: '640px',
+              margin: '0 auto',
+              fontWeight: '300',
+              textShadow: '0 2px 14px rgba(0,0,0,0.9)'
+            }}>
+              Discover a rare sanctuary of calm elegance, private butler craftsmanship, and seamless contactless reservations.
+            </p>
           </div>
 
         </div>
       </section>
 
-      {/* ================= 2. ROOMS & SUITES ================= */}
-      <section id="rooms" style={{
-        padding: '110px 24px',
+      {/* ================= 2. LAGUNA AL-SHA'AB SIGNATURE ARCH EXPAND & WIPE ================= */}
+      <section 
+        ref={showcaseSectionRef}
+        style={{
+          height: '560vh',
+          position: 'relative'
+        }}
+      >
+        <div style={{
+          position: 'sticky',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100vh',
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2,
+          background: '#04070f'
+        }}>
+
+          {/* ================= SLIDE 0: THE PRESIDENTIAL SUITES (ARCH EXPANDS) ================= */}
+          <div style={{
+            position: 'absolute',
+            width: `${arch0Width}vw`,
+            height: `${arch0Height}vh`,
+            borderRadius: `${arch0Radius}px ${arch0Radius}px 0 0`,
+            overflow: 'hidden',
+            zIndex: 1,
+            boxShadow: '0 30px 100px rgba(0,0,0,0.95)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'border-radius 0.05s linear'
+          }}>
+            <img 
+              src={showcaseSlides[0].customImg} 
+              alt={showcaseSlides[0].title}
+              onError={(e) => { e.target.onerror = null; e.target.src = showcaseSlides[0].img; }}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                filter: 'brightness(0.88) contrast(1.06)'
+              }}
+            />
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'radial-gradient(ellipse at center, rgba(5,8,17,0.1) 0%, rgba(5,8,17,0.6) 75%, #050811 100%)'
+            }} />
+
+            {/* Initial Intro Arch Text (like "CULINARY ODYSSEY BY THE SEA") */}
+            <div style={{
+              position: 'absolute',
+              zIndex: 3,
+              textAlign: 'center',
+              padding: '0 24px',
+              maxWidth: '850px',
+              opacity: intro0Opacity,
+              transform: `scale(${1 + p0 * 0.1})`
+            }}>
+              <h2 style={{
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontSize: 'clamp(36px, 5.5vw, 68px)',
+                fontWeight: '400',
+                letterSpacing: '3px',
+                color: '#ffffff',
+                textTransform: 'uppercase',
+                lineHeight: '1.1',
+                textShadow: '0 4px 30px rgba(0,0,0,0.95)'
+              }}>
+                A SANCTUARY OF ETERNAL GRANDEUR
+              </h2>
+            </div>
+
+            {/* Revealed Full-Screen Title ("THE PRESIDENTIAL SUITES") */}
+            <div style={{
+              position: 'absolute',
+              zIndex: 4,
+              textAlign: 'center',
+              padding: '0 24px',
+              maxWidth: '1000px',
+              opacity: slide0TitleOpacity,
+              transform: `translateY(${(1 - p0) * 30}px)`
+            }}>
+              <div style={{
+                color: '#d4af37',
+                fontSize: '12px',
+                fontWeight: '700',
+                letterSpacing: '5px',
+                textTransform: 'uppercase',
+                marginBottom: '16px'
+              }}>
+                <Sparkles size={13} style={{ display: 'inline', marginRight: '6px' }} />
+                {showcaseSlides[0].tag}
+              </div>
+              <h2 style={{
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontSize: 'clamp(44px, 6.8vw, 86px)',
+                fontWeight: '500',
+                lineHeight: '1.05',
+                letterSpacing: '2px',
+                color: '#ffffff',
+                textTransform: 'uppercase',
+                margin: '0 0 16px 0',
+                textShadow: '0 6px 45px rgba(0,0,0,0.95)'
+              }}>
+                {showcaseSlides[0].title}
+              </h2>
+              <p style={{
+                color: '#cbd5e1',
+                fontSize: '15.5px',
+                maxWidth: '600px',
+                margin: '0 auto',
+                lineHeight: '1.7',
+                fontWeight: '300',
+                textShadow: '0 2px 14px rgba(0,0,0,0.9)'
+              }}>
+                {showcaseSlides[0].desc}
+              </p>
+            </div>
+          </div>
+
+          {/* ================= SLIDE 1: THE GRAND FINE DINING (ARCH SLIDES UP OVER SLIDE 0) ================= */}
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            width: `${slide1Width}vw`,
+            height: `${slide1Height}vh`,
+            borderRadius: `${slide1Radius}px ${slide1Radius}px 0 0`,
+            transform: `translate3d(0, ${slide1Y}%, 0)`,
+            overflow: 'hidden',
+            zIndex: 2,
+            boxShadow: p1 > 0.01 && p1 < 0.99 ? '0 -35px 90px rgba(0,0,0,0.95)' : 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#050811'
+          }}>
+            <img 
+              src={showcaseSlides[1].customImg} 
+              alt={showcaseSlides[1].title}
+              onError={(e) => { e.target.onerror = null; e.target.src = showcaseSlides[1].img; }}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                transform: `translate3d(0, ${slide1ImgParallax}%, 0)`,
+                filter: 'brightness(0.88) contrast(1.06)'
+              }}
+            />
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'radial-gradient(ellipse at center, rgba(5,8,17,0.1) 0%, rgba(5,8,17,0.6) 75%, #050811 100%)'
+            }} />
+
+            <div style={{
+              position: 'relative',
+              zIndex: 3,
+              textAlign: 'center',
+              padding: '0 24px',
+              maxWidth: '1000px',
+              opacity: slide1TitleOpacity,
+              transform: `translateY(${(1 - p1) * 40}px)`
+            }}>
+              <div style={{
+                color: '#d4af37',
+                fontSize: '12px',
+                fontWeight: '700',
+                letterSpacing: '5px',
+                textTransform: 'uppercase',
+                marginBottom: '16px'
+              }}>
+                <Sparkles size={13} style={{ display: 'inline', marginRight: '6px' }} />
+                {showcaseSlides[1].tag}
+              </div>
+              <h2 style={{
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontSize: 'clamp(44px, 6.8vw, 86px)',
+                fontWeight: '500',
+                lineHeight: '1.05',
+                letterSpacing: '2px',
+                color: '#ffffff',
+                textTransform: 'uppercase',
+                margin: '0 0 16px 0',
+                textShadow: '0 6px 45px rgba(0,0,0,0.95)'
+              }}>
+                {showcaseSlides[1].title}
+              </h2>
+              <p style={{
+                color: '#cbd5e1',
+                fontSize: '15.5px',
+                maxWidth: '600px',
+                margin: '0 auto',
+                lineHeight: '1.7',
+                fontWeight: '300',
+                textShadow: '0 2px 14px rgba(0,0,0,0.9)'
+              }}>
+                {showcaseSlides[1].desc}
+              </p>
+            </div>
+          </div>
+
+          {/* ================= SLIDE 2: THE AMBER BAR & CELLAR (ARCH SLIDES UP OVER SLIDE 1) ================= */}
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            width: `${slide2Width}vw`,
+            height: `${slide2Height}vh`,
+            borderRadius: `${slide2Radius}px ${slide2Radius}px 0 0`,
+            transform: `translate3d(0, ${slide2Y}%, 0)`,
+            overflow: 'hidden',
+            zIndex: 3,
+            boxShadow: p2 > 0.01 && p2 < 0.99 ? '0 -35px 90px rgba(0,0,0,0.95)' : 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#050811'
+          }}>
+            <img 
+              src={showcaseSlides[2].customImg} 
+              alt={showcaseSlides[2].title}
+              onError={(e) => { e.target.onerror = null; e.target.src = showcaseSlides[2].img; }}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                transform: `translate3d(0, ${slide2ImgParallax}%, 0)`,
+                filter: 'brightness(0.88) contrast(1.06)'
+              }}
+            />
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'radial-gradient(ellipse at center, rgba(5,8,17,0.1) 0%, rgba(5,8,17,0.6) 75%, #050811 100%)'
+            }} />
+
+            <div style={{
+              position: 'relative',
+              zIndex: 3,
+              textAlign: 'center',
+              padding: '0 24px',
+              maxWidth: '1000px',
+              opacity: slide2TitleOpacity,
+              transform: `translateY(${(1 - p2) * 40}px)`
+            }}>
+              <div style={{
+                color: '#d4af37',
+                fontSize: '12px',
+                fontWeight: '700',
+                letterSpacing: '5px',
+                textTransform: 'uppercase',
+                marginBottom: '16px'
+              }}>
+                <Sparkles size={13} style={{ display: 'inline', marginRight: '6px' }} />
+                {showcaseSlides[2].tag}
+              </div>
+              <h2 style={{
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontSize: 'clamp(44px, 6.8vw, 86px)',
+                fontWeight: '500',
+                lineHeight: '1.05',
+                letterSpacing: '2px',
+                color: '#ffffff',
+                textTransform: 'uppercase',
+                margin: '0 0 16px 0',
+                textShadow: '0 6px 45px rgba(0,0,0,0.95)'
+              }}>
+                {showcaseSlides[2].title}
+              </h2>
+              <p style={{
+                color: '#cbd5e1',
+                fontSize: '15.5px',
+                maxWidth: '600px',
+                margin: '0 auto',
+                lineHeight: '1.7',
+                fontWeight: '300',
+                textShadow: '0 2px 14px rgba(0,0,0,0.9)'
+              }}>
+                {showcaseSlides[2].desc}
+              </p>
+            </div>
+          </div>
+
+          {/* Slide Indicator Dots */}
+          <div style={{
+            position: 'absolute',
+            bottom: '36px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            gap: '10px',
+            zIndex: 10
+          }}>
+            {[0, 1, 2].map((i) => (
+              <div 
+                key={i} 
+                style={{
+                  width: activeDot === i ? '30px' : '8px',
+                  height: '4px',
+                  borderRadius: '4px',
+                  background: activeDot === i ? '#d4af37' : 'rgba(255,255,255,0.3)',
+                  transition: 'all 0.3s ease'
+                }} 
+              />
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      {/* ================= 3. LIVE SUITES & RESIDENCES SECTION ================= */}
+      <section id="residences" style={{
+        position: 'relative',
+        zIndex: 3,
+        padding: '90px 24px 70px 24px',
         maxWidth: '1340px',
         margin: '0 auto',
-        borderTop: '1px solid rgba(255,255,255,0.05)'
+        borderTop: '1px solid rgba(212, 175, 55, 0.25)'
       }}>
+        
         <div style={{ textAlign: 'center', marginBottom: '45px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
             <div style={{ width: '25px', height: '1px', background: '#d4af37' }} />
             <span style={{ color: '#d4af37', fontSize: '11px', fontWeight: '700', letterSpacing: '3px', textTransform: 'uppercase' }}>
-              Accommodations
+              Accommodations Portfolio
             </span>
             <div style={{ width: '25px', height: '1px', background: '#d4af37' }} />
           </div>
 
           <h2 style={{
             fontFamily: "'Playfair Display', Georgia, serif",
-            fontSize: 'clamp(30px, 4vw, 44px)',
+            fontSize: 'clamp(30px, 4vw, 46px)',
             color: '#ffffff',
-            margin: '0 0 22px 0'
+            margin: '0 0 20px 0'
           }}>
             Suites, Penthouses & Residences
           </h2>
@@ -462,14 +875,15 @@ const LandingPage = () => {
                   key={cat}
                   onClick={() => handleCategoryFilter(cat)}
                   style={{
-                    background: isSelected ? '#d4af37' : 'rgba(255,255,255,0.04)',
+                    background: isSelected ? '#d4af37' : 'rgba(255,255,255,0.08)',
                     color: isSelected ? '#070b14' : '#cbd5e1',
-                    border: isSelected ? '1px solid #d4af37' : '1px solid rgba(255,255,255,0.08)',
+                    border: isSelected ? '1px solid #d4af37' : '1px solid rgba(255,255,255,0.12)',
                     padding: '8px 20px',
                     borderRadius: '25px',
                     fontSize: '12px',
                     fontWeight: isSelected ? '700' : '500',
                     cursor: 'pointer',
+                    backdropFilter: 'blur(6px)',
                     transition: 'all 0.2s ease'
                   }}
                 >
@@ -480,6 +894,7 @@ const LandingPage = () => {
           </div>
         </div>
 
+        {/* Suites Grid */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 380px))',
@@ -500,8 +915,9 @@ const LandingPage = () => {
               <div 
                 key={room._id}
                 style={{
-                  background: '#0d1527',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  background: 'rgba(10, 16, 30, 0.78)',
+                  backdropFilter: 'blur(12px)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
                   borderRadius: '16px',
                   overflow: 'hidden',
                   display: 'flex',
@@ -511,14 +927,13 @@ const LandingPage = () => {
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-4px)';
-                  e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.4)';
+                  e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.5)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
                 }}
               >
-                {/* Room Image with fallback */}
                 <div style={{ position: 'relative', height: '220px', width: '100%', overflow: 'hidden' }}>
                   <img 
                     src={getRoomImg(room.roomType)} 
@@ -561,30 +976,19 @@ const LandingPage = () => {
 
                 <div style={{ padding: '22px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div>
-                    <h3 style={{
-                      fontFamily: "'Playfair Display', Georgia, serif",
-                      fontSize: '20px',
-                      color: '#ffffff',
-                      margin: '0 0 8px 0'
-                    }}>
+                    <h3 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '20px', color: '#ffffff', margin: '0 0 8px 0' }}>
                       {room.roomType}
                     </h3>
 
-                    <p style={{ 
-                      color: '#94a3b8', 
-                      fontSize: '13px', 
-                      lineHeight: '1.6', 
-                      marginBottom: '16px',
-                      minHeight: '42px'
-                    }}>
-                      {room.description || 'Master-crafted suite offering expansive city views, premium Italian linens, and 24/7 dedicated room concierge.'}
+                    <p style={{ color: '#94a3b8', fontSize: '13px', lineHeight: '1.6', marginBottom: '16px', minHeight: '42px' }}>
+                      {room.description || 'Master-crafted suite offering expansive views, premium Italian linens, and dedicated 24/7 butler desk.'}
                     </p>
 
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '20px' }}>
                       {room.amenities && room.amenities.length > 0 ? (
                         room.amenities.slice(0, 3).map((am, i) => (
                           <span key={i} style={{
-                            background: 'rgba(255, 255, 255, 0.04)',
+                            background: 'rgba(255, 255, 255, 0.05)',
                             border: '1px solid rgba(255, 255, 255, 0.08)',
                             fontSize: '11px',
                             color: '#cbd5e1',
@@ -597,7 +1001,7 @@ const LandingPage = () => {
                       ) : (
                         ['High-Speed Wifi', 'King Bed', 'City View'].map((item, i) => (
                           <span key={i} style={{
-                            background: 'rgba(255, 255, 255, 0.04)',
+                            background: 'rgba(255, 255, 255, 0.05)',
                             border: '1px solid rgba(255, 255, 255, 0.08)',
                             fontSize: '11px',
                             color: '#cbd5e1',
@@ -612,7 +1016,7 @@ const LandingPage = () => {
                   </div>
 
                   <div style={{
-                    borderTop: '1px solid rgba(255,255,255,0.06)',
+                    borderTop: '1px solid rgba(255,255,255,0.08)',
                     paddingTop: '16px',
                     display: 'flex',
                     alignItems: 'center',
@@ -630,8 +1034,8 @@ const LandingPage = () => {
                         onClick={() => setRoomDetailModal(room)}
                         title="Room Specs"
                         style={{
-                          background: 'rgba(255,255,255,0.05)',
-                          border: '1px solid rgba(255,255,255,0.12)',
+                          background: 'rgba(255,255,255,0.08)',
+                          border: '1px solid rgba(255,255,255,0.15)',
                           color: '#cbd5e1',
                           padding: '9px 12px',
                           borderRadius: '8px',
@@ -660,12 +1064,6 @@ const LandingPage = () => {
                           boxShadow: isAvailable ? '0 3px 12px rgba(212, 175, 55, 0.25)' : 'none',
                           transition: 'transform 0.15s ease'
                         }}
-                        onMouseEnter={(e) => {
-                          if (isAvailable) e.currentTarget.style.transform = 'translateY(-1px)';
-                        }}
-                        onMouseLeave={(e) => {
-                          if (isAvailable) e.currentTarget.style.transform = 'translateY(0)';
-                        }}
                       >
                         {isAvailable ? 'Reserve Suite' : 'Occupied'}
                       </button>
@@ -678,53 +1076,38 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ================= 3. BESPOKE VIP EXPERIENCES ================= */}
+      {/* ================= 4. BESPOKE VIP PRIVILEGES ================= */}
       <section style={{
-        padding: '100px 24px',
-        background: 'transparent',
-        borderTop: '1px solid rgba(255,255,255,0.05)',
-        borderBottom: '1px solid rgba(255,255,255,0.05)'
+        padding: '90px 24px',
+        borderTop: '1px solid rgba(255,255,255,0.08)',
+        borderBottom: '1px solid rgba(255,255,255,0.08)'
       }}>
         <div style={{ maxWidth: '1300px', margin: '0 auto' }}>
           
-          <div style={{ textAlign: 'center', marginBottom: '55px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '50px' }}>
             <span style={{ color: '#d4af37', fontSize: '11px', fontWeight: '700', letterSpacing: '3px', textTransform: 'uppercase' }}>
-              Beyond The Suite
-            </span>
-            <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 'clamp(30px, 4vw, 44px)', color: '#ffffff', margin: '8px 0 14px 0' }}>
               Signature Resort Privileges
+            </span>
+            <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 'clamp(28px, 4vw, 42px)', color: '#ffffff', margin: '8px 0' }}>
+              Bespoke Guest Craftsmanship
             </h2>
-            <p style={{ color: '#94a3b8', fontSize: '14.5px', maxWidth: '600px', margin: '0 auto' }}>
-              Exclusive experiences reserved exclusively for residents of LuxuryStay Hospitality.
-            </p>
           </div>
 
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-            gap: '28px'
+            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+            gap: '26px'
           }}>
-            <div style={{
-              background: '#0d1527',
-              borderRadius: '20px',
-              overflow: 'hidden',
-              border: '1px solid rgba(255,255,255,0.08)',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.7)'
-            }}>
-              <div style={{ height: '220px', overflow: 'hidden' }}>
-                <img 
-                  src="/Images/service-chauffeur.jpg" 
-                  alt="VIP Chauffeur" 
-                  onError={(e) => { e.target.onerror = null; e.target.src = '/Images/about-hotel.jpg'; }}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
+            <div style={{ background: 'rgba(10, 16, 30, 0.78)', backdropFilter: 'blur(12px)', borderRadius: '18px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ height: '200px' }}>
+                <img src="/Images/service-chauffeur.jpg" alt="Chauffeur" onError={(e) => { e.target.onerror = null; e.target.src = '/Images/about-hotel.jpg'; }} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
-              <div style={{ padding: '24px' }}>
+              <div style={{ padding: '22px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#d4af37', marginBottom: '8px' }}>
                   <Car size={16} />
                   <span style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Private Fleet</span>
                 </div>
-                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#fff', marginBottom: '8px' }}>
+                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '19px', color: '#fff', marginBottom: '8px' }}>
                   Rolls-Royce Chauffeur Transfer
                 </h3>
                 <p style={{ color: '#94a3b8', fontSize: '13px', lineHeight: '1.6' }}>
@@ -733,27 +1116,16 @@ const LandingPage = () => {
               </div>
             </div>
 
-            <div style={{
-              background: '#0d1527',
-              borderRadius: '20px',
-              overflow: 'hidden',
-              border: '1px solid rgba(255,255,255,0.08)',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.7)'
-            }}>
-              <div style={{ height: '220px', overflow: 'hidden' }}>
-                <img 
-                  src="/Images/experience-yacht.jpg" 
-                  alt="Private Yacht Charter" 
-                  onError={(e) => { e.target.onerror = null; e.target.src = '/Images/amenity-pool.jpg'; }}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
+            <div style={{ background: 'rgba(10, 16, 30, 0.78)', backdropFilter: 'blur(12px)', borderRadius: '18px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ height: '200px' }}>
+                <img src="/Images/experience-yacht.jpg" alt="Yacht" onError={(e) => { e.target.onerror = null; e.target.src = '/Images/amenity-pool.jpg'; }} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
-              <div style={{ padding: '24px' }}>
+              <div style={{ padding: '22px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#d4af37', marginBottom: '8px' }}>
                   <Anchor size={16} />
                   <span style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Maritime Leisure</span>
                 </div>
-                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#fff', marginBottom: '8px' }}>
+                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '19px', color: '#fff', marginBottom: '8px' }}>
                   Private Sunset Yacht Charters
                 </h3>
                 <p style={{ color: '#94a3b8', fontSize: '13px', lineHeight: '1.6' }}>
@@ -762,27 +1134,16 @@ const LandingPage = () => {
               </div>
             </div>
 
-            <div style={{
-              background: '#0d1527',
-              borderRadius: '20px',
-              overflow: 'hidden',
-              border: '1px solid rgba(255,255,255,0.08)',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.7)'
-            }}>
-              <div style={{ height: '220px', overflow: 'hidden' }}>
-                <img 
-                  src="/Images/experience-lounge.jpg" 
-                  alt="Sky Lounge" 
-                  onError={(e) => { e.target.onerror = null; e.target.src = '/Images/amenity-dining.jpg'; }}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
+            <div style={{ background: 'rgba(10, 16, 30, 0.78)', backdropFilter: 'blur(12px)', borderRadius: '18px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ height: '200px' }}>
+                <img src="/Images/experience-lounge.jpg" alt="Sky Lounge" onError={(e) => { e.target.onerror = null; e.target.src = '/Images/amenity-dining.jpg'; }} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
-              <div style={{ padding: '24px' }}>
+              <div style={{ padding: '22px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#d4af37', marginBottom: '8px' }}>
                   <GlassWater size={16} />
                   <span style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Nightlife & Cellar</span>
                 </div>
-                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#fff', marginBottom: '8px' }}>
+                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '19px', color: '#fff', marginBottom: '8px' }}>
                   The 50th-Floor Cigar & Wine Club
                 </h3>
                 <p style={{ color: '#94a3b8', fontSize: '13px', lineHeight: '1.6' }}>
@@ -790,27 +1151,22 @@ const LandingPage = () => {
                 </p>
               </div>
             </div>
-
           </div>
         </div>
       </section>
 
-      {/* ================= 4. GUEST FEEDBACK & REVIEWS ================= */}
-      <section style={{ padding: '90px 24px 110px 24px', background: 'transparent', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      {/* ================= 5. GUEST REVIEWS & FEEDBACK ================= */}
+      <section style={{ padding: '90px 24px', textAlign: 'center' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
-          
           <div style={{ display: 'inline-flex', gap: '6px', marginBottom: '14px' }}>
             {[1, 2, 3, 4, 5].map((s) => (
-              <Star key={s} size={20} color="#d4af37" style={{ fill: '#d4af37' }} />
+              <Star key={s} size={18} color="#d4af37" style={{ fill: '#d4af37' }} />
             ))}
           </div>
 
-          <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 'clamp(30px, 4vw, 42px)', color: '#ffffff', marginBottom: '12px' }}>
+          <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 'clamp(28px, 4vw, 40px)', color: '#ffffff', marginBottom: '12px' }}>
             Guest Experience & Verified Impressions
           </h2>
-          <p style={{ color: '#94a3b8', fontSize: '15px', lineHeight: '1.7', maxWidth: '640px', margin: '0 auto 28px auto' }}>
-            Authentic reflections from residents who have experienced the timeless craftsmanship of LuxuryStay Hospitality.
-          </p>
 
           <button 
             onClick={() => setFeedbackModalOpen(true)}
@@ -818,26 +1174,25 @@ const LandingPage = () => {
               background: 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)',
               color: '#070b14',
               fontWeight: '700',
-              fontSize: '13px',
+              fontSize: '12.5px',
               letterSpacing: '0.8px',
               textTransform: 'uppercase',
-              padding: '13px 32px',
+              padding: '12px 28px',
               borderRadius: '30px',
               border: 'none',
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '8px',
-              marginBottom: '55px',
-              boxShadow: '0 6px 20px rgba(212, 175, 55, 0.25)'
+              margin: '20px 0 50px 0'
             }}
           >
-            <Star size={15} /> Submit Stay Review
+            <Star size={14} /> Submit Stay Review
           </button>
 
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
             gap: '24px',
             textAlign: 'left'
           }}>
@@ -853,46 +1208,30 @@ const LandingPage = () => {
                 name: 'Dr. Sarah Ahmed',
                 suite: 'Deluxe Suite • Floor 1',
                 rating: 5,
-                comment: 'The rooftop heated infinity pool at twilight offers the most tranquil skyline view. Impeccable cleanliness and courteous front desk staff.',
+                comment: 'The infinity pool at twilight offers the most tranquil view. Impeccable cleanliness and courteous front desk staff.',
                 date: 'September 2026'
               },
               {
                 name: 'Hamza Farooq',
                 suite: 'Penthouse Residency • Floor 3',
                 rating: 5,
-                comment: 'Seamless contactless check-in. The room was pristine, and my 06:30 AM wake-up call was handled right on the minute. Outstanding.',
+                comment: 'Seamless contactless check-in. The room was pristine, and my wake-up call was handled right on the minute. Outstanding.',
                 date: 'October 2026'
               }
             ].map((rev, idx) => (
-              <div 
-                key={idx}
-                style={{
-                  background: '#0d1527',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '16px',
-                  padding: '28px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  boxShadow: '0 15px 35px -10px rgba(0, 0, 0, 0.7)'
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', gap: '4px', marginBottom: '16px' }}>
-                    {[...Array(rev.rating)].map((_, i) => (
-                      <Star key={i} size={15} color="#d4af37" style={{ fill: '#d4af37' }} />
-                    ))}
-                  </div>
-
-                  <p style={{ color: '#e2e8f0', fontSize: '14px', lineHeight: '1.65', fontStyle: 'italic', marginBottom: '22px' }}>
-                    "{rev.comment}"
-                  </p>
+              <div key={idx} style={{ background: 'rgba(10, 16, 30, 0.78)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '16px', padding: '24px' }}>
+                <div style={{ display: 'flex', gap: '4px', marginBottom: '12px' }}>
+                  {[...Array(rev.rating)].map((_, i) => (
+                    <Star key={i} size={14} color="#d4af37" style={{ fill: '#d4af37' }} />
+                  ))}
                 </div>
-
-                <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <p style={{ color: '#e2e8f0', fontSize: '13.5px', lineHeight: '1.6', fontStyle: 'italic', marginBottom: '16px' }}>
+                  "{rev.comment}"
+                </p>
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <div style={{ color: '#ffffff', fontSize: '14px', fontWeight: '700' }}>{rev.name}</div>
-                    <div style={{ color: '#d4af37', fontSize: '11px', marginTop: '2px' }}>{rev.suite}</div>
+                    <div style={{ color: '#ffffff', fontSize: '13.5px', fontWeight: '700' }}>{rev.name}</div>
+                    <div style={{ color: '#d4af37', fontSize: '11px' }}>{rev.suite}</div>
                   </div>
                   <span style={{ fontSize: '11px', color: '#94a3b8' }}>{rev.date}</span>
                 </div>
@@ -903,7 +1242,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ================= MODAL: QUICK ROOM SPECS DRAWER ================= */}
+      {/* ================= MODAL: QUICK ROOM SPECS ================= */}
       {roomDetailModal && (
         <div style={modalBackdropStyle} onClick={() => setRoomDetailModal(null)}>
           <div 
@@ -974,7 +1313,7 @@ const LandingPage = () => {
                     cursor: roomDetailModal.status === 'Available' ? 'pointer' : 'not-allowed' 
                   }}
                 >
-                  {roomDetailModal.status === 'Available' ? 'Reserve This Room' : 'Currently Unavailable'}
+                  {roomDetailModal.status === 'Available' ? 'Reserve Suite' : 'Occupied'}
                 </button>
               </div>
             </div>
@@ -1008,27 +1347,12 @@ const LandingPage = () => {
                   Suite #{selectedRoom.roomNumber} • ${selectedRoom.pricePerNight} / night
                 </span>
               </div>
-              <button 
-                onClick={() => setBookingModalOpen(false)} 
-                style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}
-              >
-                <X size={18} />
-              </button>
+              <button onClick={() => setBookingModalOpen(false)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}><X size={18} /></button>
             </div>
 
             {bookingSuccess ? (
               <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                <div style={{ 
-                  width: '52px', 
-                  height: '52px', 
-                  borderRadius: '50%', 
-                  background: 'rgba(16, 185, 129, 0.2)', 
-                  color: '#10b981', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  margin: '0 auto 16px auto'
-                }}>
+                <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto' }}>
                   <Check size={28} />
                 </div>
                 <h4 style={{ fontFamily: "'Playfair Display', serif", color: '#fff', fontSize: '22px', marginBottom: '6px' }}>
@@ -1127,7 +1451,9 @@ const LandingPage = () => {
                         setBookingForm((prev) => ({
                           ...prev,
                           checkInDate: newIn,
-                          checkOutDate: prev.checkOutDate <= newIn ? newIn : prev.checkOutDate
+                          checkOutDate: prev.checkOutDate <= newIn 
+                            ? new Date(new Date(newIn).getTime() + 86400000).toISOString().split('T')[0]
+                            : prev.checkOutDate
                         }));
                       }}
                       style={fieldInputStyle}
@@ -1146,7 +1472,6 @@ const LandingPage = () => {
                   </div>
                 </div>
 
-                {/* Adults and Children Inputs */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div>
                     <label style={fieldLabelStyle}>Adults *</label>
@@ -1177,7 +1502,7 @@ const LandingPage = () => {
                   <label style={fieldLabelStyle}>Special Requests / Arrival Notes</label>
                   <input
                     type="text"
-                    placeholder="e.g. Airport limousine transfer, late check-in"
+                    placeholder="e.g. Limousine transfer, late check-in"
                     value={bookingForm.specialRequests}
                     onChange={(e) => setBookingForm({ ...bookingForm, specialRequests: e.target.value })}
                     style={fieldInputStyle}
@@ -1249,7 +1574,7 @@ const LandingPage = () => {
             </div>
             <form onSubmit={handleServiceSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={fieldLabelStyle}>Guest Name / Reservation Name *</label>
+                <label style={fieldLabelStyle}>Guest Name *</label>
                 <input
                   type="text"
                   required
@@ -1391,7 +1716,7 @@ const LandingPage = () => {
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
                 <button type="button" onClick={() => setFeedbackModalOpen(false)} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', color: '#cbd5e1', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>Cancel</button>
                 <button type="submit" style={{ background: 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)', color: '#070b14', fontWeight: '700', padding: '8px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px' }}>Submit</button>
               </div>
