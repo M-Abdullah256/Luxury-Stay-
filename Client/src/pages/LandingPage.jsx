@@ -482,26 +482,26 @@ const LandingPage = () => {
               </span>
             </div>
 
-            <h1 style={{
-              fontFamily: "'Playfair Display', Georgia, serif",
-              fontSize: 'clamp(40px, 6vw, 82px)',
-              color: '#ffffff',
-              fontWeight: '600',
-              lineHeight: '1.08',
-              letterSpacing: '-0.5px',
-              marginBottom: '20px',
-              textShadow: '0 4px 35px rgba(0, 0, 0, 0.95)'
-            }}>
-              Where Bespoke Grandeur Meets <br />
-              <span style={{
-                fontStyle: 'italic',
-                background: 'linear-gradient(135deg, #ffffff 0%, #fef08a 50%, #d4af37 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
-              }}>
-                Unrivaled Hospitality
-              </span>
-            </h1>
+           <h1 style={{
+  fontFamily: "'Playfair Display', Georgia, serif",
+  fontSize: 'clamp(40px, 6vw, 82px)',
+  fontWeight: '600',
+  lineHeight: '1.1',
+  letterSpacing: '-0.5px',
+  marginBottom: '20px',
+  color: '#ffffff',
+  textShadow: '0 4px 35px rgba(0, 0, 0, 0.95)'
+}}>
+  Where Bespoke Grandeur Meets <br />
+  <span style={{
+    fontStyle: 'italic',
+    color: '#d4af37',
+    textShadow: '0 0 25px rgba(212, 175, 55, 0.45)',
+    display: 'inline-block'
+  }}>
+    Unrivaled Hospitality
+  </span>
+</h1>
 
             <p style={{
               fontSize: 'clamp(14.5px, 1.8vw, 17.5px)',
