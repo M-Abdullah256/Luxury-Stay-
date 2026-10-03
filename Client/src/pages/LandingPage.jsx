@@ -27,14 +27,24 @@ const LandingPage = () => {
   const pendingTimeRef = useRef(null);
   const lastSeekTimeRef = useRef(0);
 
-  // Hero Opening Title Fade
-  const [heroTitleOpacity, setHeroTitleOpacity] = useState(1);
-
-  // Laguna Al-Sha'ab Arch Scroll Engine Refs & State
+  // Direct DOM Refs (No React Re-render Lag)
+  const heroTitleRef = useRef(null);
+  const showcaseContainerRef = useRef(null);
   const showcaseSectionRef = useRef(null);
   const targetShowcaseProgressRef = useRef(0);
   const currentShowcaseProgressRef = useRef(0);
-  const [showcaseProgress, setShowcaseProgress] = useState(0);
+
+  // Slide Elements for Direct GPU manipulation
+  const arch0Ref = useRef(null);
+  const intro0Ref = useRef(null);
+  const title0Ref = useRef(null);
+  const slide1Ref = useRef(null);
+  const slide1TitleRef = useRef(null);
+  const slide1ImgRef = useRef(null);
+  const slide2Ref = useRef(null);
+  const slide2TitleRef = useRef(null);
+  const slide2ImgRef = useRef(null);
+  const dotsRef = useRef([]);
 
   // Modals State
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
@@ -118,12 +128,14 @@ const LandingPage = () => {
     fetchRooms();
   }, []);
 
+  const clamp = (val, min, max) => Math.min(Math.max(val, min), max);
+
   // ================= HARDWARE-ACCELERATED ULTRA-SMOOTH SEEK QUEUE =================
   const executeSeek = (targetTime) => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !video.duration) return;
 
-    if (Math.abs(targetTime - lastSeekTimeRef.current) < 0.035) {
+    if (Math.abs(targetTime - lastSeekTimeRef.current) < 0.03) {
       return;
     }
 
@@ -165,13 +177,12 @@ const LandingPage = () => {
 
     video.addEventListener('seeked', handleSeeked);
 
-    // Scroll Handler
     const onScroll = () => {
       if (scrollSectionRef.current) {
         const rect = scrollSectionRef.current.getBoundingClientRect();
         const totalScroll = rect.height - window.innerHeight;
         const currentScroll = -rect.top;
-        let progress = currentScroll / totalScroll;
+        const progress = currentScroll / (totalScroll > 0 ? totalScroll : 1);
         targetProgressRef.current = Math.max(0, Math.min(1, progress));
       }
 
@@ -187,12 +198,12 @@ const LandingPage = () => {
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
 
-    // Physics Lerp Loop (Silky 60fps)
+    // Silky 60fps Loop — DIRECT DOM TRANSFORMATIONS WITHOUT REACT RE-RENDERS
     let animId;
     const renderLoop = () => {
-      // 1. Video Lerp
+      // 1. Video Lerp & Hero Title Update
       const diff = targetProgressRef.current - currentProgressRef.current;
-      if (Math.abs(diff) > 0.0002) {
+      if (Math.abs(diff) > 0.0001) {
         currentProgressRef.current += diff * 0.12;
         const p = currentProgressRef.current;
 
@@ -200,15 +211,78 @@ const LandingPage = () => {
           executeSeek(video.duration * p);
         }
 
-        const newOpacity = Math.max(0, 1 - (p / 0.18));
-        setHeroTitleOpacity(newOpacity);
+        if (heroTitleRef.current) {
+          const newOpacity = Math.max(0, 1 - (p / 0.18));
+          heroTitleRef.current.style.opacity = newOpacity;
+          heroTitleRef.current.style.transform = `translate3d(0, -${(1 - newOpacity) * 35}px, 0)`;
+          heroTitleRef.current.style.pointerEvents = newOpacity > 0.1 ? 'auto' : 'none';
+        }
       }
 
-      // 2. Showcase Lerp with damping
+      // 2. Showcase Arch Transforms (Directly on Elements)
       const sDiff = targetShowcaseProgressRef.current - currentShowcaseProgressRef.current;
       if (Math.abs(sDiff) > 0.0001) {
-        currentShowcaseProgressRef.current += sDiff * 0.09;
-        setShowcaseProgress(currentShowcaseProgressRef.current);
+        currentShowcaseProgressRef.current += sDiff * 0.1;
+        const sp = currentShowcaseProgressRef.current;
+
+        // Slide 0 calculations
+        const p0 = clamp(sp / 0.24, 0, 1);
+        if (arch0Ref.current) {
+          arch0Ref.current.style.width = `${68 + p0 * 32}vw`;
+          arch0Ref.current.style.height = `${65 + p0 * 35}vh`;
+          arch0Ref.current.style.borderRadius = `${(1 - p0) * 260}px ${(1 - p0) * 260}px 0 0`;
+        }
+        if (intro0Ref.current) {
+          intro0Ref.current.style.opacity = clamp(1 - p0 * 2.2, 0, 1);
+          intro0Ref.current.style.transform = `scale(${1 + p0 * 0.1})`;
+        }
+        if (title0Ref.current) {
+          title0Ref.current.style.opacity = clamp((p0 - 0.45) * 1.9, 0, 1);
+          title0Ref.current.style.transform = `translate3d(0, ${(1 - p0) * 30}px, 0)`;
+        }
+
+        // Slide 1 calculations
+        const p1 = clamp((sp - 0.30) / 0.32, 0, 1);
+        if (slide1Ref.current) {
+          slide1Ref.current.style.width = `${72 + p1 * 28}vw`;
+          slide1Ref.current.style.height = `${70 + p1 * 30}vh`;
+          slide1Ref.current.style.borderRadius = `${(1 - p1) * 240}px ${(1 - p1) * 240}px 0 0`;
+          slide1Ref.current.style.transform = `translate3d(0, ${(1 - p1) * 105}%, 0)`;
+          slide1Ref.current.style.boxShadow = p1 > 0.01 && p1 < 0.99 ? '0 -35px 90px rgba(0,0,0,0.95)' : 'none';
+        }
+        if (slide1ImgRef.current) {
+          slide1ImgRef.current.style.transform = `translate3d(0, ${(1 - p1) * -22}%, 0)`;
+        }
+        if (slide1TitleRef.current) {
+          slide1TitleRef.current.style.opacity = clamp((p1 - 0.4) * 2.0, 0, 1);
+          slide1TitleRef.current.style.transform = `translate3d(0, ${(1 - p1) * 40}px, 0)`;
+        }
+
+        // Slide 2 calculations
+        const p2 = clamp((sp - 0.66) / 0.30, 0, 1);
+        if (slide2Ref.current) {
+          slide2Ref.current.style.width = `${72 + p2 * 28}vw`;
+          slide2Ref.current.style.height = `${70 + p2 * 30}vh`;
+          slide2Ref.current.style.borderRadius = `${(1 - p2) * 240}px ${(1 - p2) * 240}px 0 0`;
+          slide2Ref.current.style.transform = `translate3d(0, ${(1 - p2) * 105}%, 0)`;
+          slide2Ref.current.style.boxShadow = p2 > 0.01 && p2 < 0.99 ? '0 -35px 90px rgba(0,0,0,0.95)' : 'none';
+        }
+        if (slide2ImgRef.current) {
+          slide2ImgRef.current.style.transform = `translate3d(0, ${(1 - p2) * -22}%, 0)`;
+        }
+        if (slide2TitleRef.current) {
+          slide2TitleRef.current.style.opacity = clamp((p2 - 0.4) * 2.0, 0, 1);
+          slide2TitleRef.current.style.transform = `translate3d(0, ${(1 - p2) * 40}px, 0)`;
+        }
+
+        // Dots update
+        const activeIdx = sp < 0.35 ? 0 : sp < 0.68 ? 1 : 2;
+        dotsRef.current.forEach((dot, idx) => {
+          if (dot) {
+            dot.style.width = activeIdx === idx ? '30px' : '8px';
+            dot.style.background = activeIdx === idx ? '#d4af37' : 'rgba(255,255,255,0.3)';
+          }
+        });
       }
 
       animId = requestAnimationFrame(renderLoop);
@@ -336,45 +410,13 @@ const LandingPage = () => {
     }
   ];
 
-  // ================= EXACT LAGUNA AL-SHA'AB ARCH CALCULATIONS =================
-  const clamp = (val, min, max) => Math.min(Math.max(val, min), max);
-
-  // 1. Slide 0 Arch Expand (0.00 -> 0.24)
-  const p0 = clamp(showcaseProgress / 0.24, 0, 1);
-  const arch0Width = 68 + p0 * 32; // 68vw -> 100vw
-  const arch0Height = 65 + p0 * 35; // 65vh -> 100vh
-  const arch0Radius = (1 - p0) * 260; // 260px -> 0px
-  const intro0Opacity = clamp(1 - p0 * 2.2, 0, 1); // Intro text disappears
-  const slide0TitleOpacity = clamp((p0 - 0.45) * 1.9, 0, 1); // Main title appears
-
-  // 2. Slide 1 Arch Rise & Expand (0.30 -> 0.62)
-  const p1 = clamp((showcaseProgress - 0.30) / 0.32, 0, 1);
-  const slide1Y = (1 - p1) * 105; // 105% -> 0%
-  const slide1Width = 72 + p1 * 28; // 72vw -> 100vw
-  const slide1Height = 70 + p1 * 30; // 70vh -> 100vh
-  const slide1Radius = (1 - p1) * 240; // 240px -> 0px
-  const slide1TitleOpacity = clamp((p1 - 0.4) * 2.0, 0, 1);
-  const slide1ImgParallax = (1 - p1) * -22;
-
-  // 3. Slide 2 Arch Rise & Expand (0.66 -> 0.96)
-  const p2 = clamp((showcaseProgress - 0.66) / 0.30, 0, 1);
-  const slide2Y = (1 - p2) * 105; // 105% -> 0%
-  const slide2Width = 72 + p2 * 28; // 72vw -> 100vw
-  const slide2Height = 70 + p2 * 30; // 70vh -> 100vh
-  const slide2Radius = (1 - p2) * 240; // 240px -> 0px
-  const slide2TitleOpacity = clamp((p2 - 0.4) * 2.0, 0, 1);
-  const slide2ImgParallax = (1 - p2) * -22;
-
-  // Active indicator dot
-  const activeDot = showcaseProgress < 0.35 ? 0 : showcaseProgress < 0.68 ? 1 : 2;
-
- return (
-  <div style={{ 
-    background: 'transparent',
-    color: '#f8fafc', 
-    minHeight: '100vh', 
-    position: 'relative' 
-  }}>
+  return (
+    <div style={{ 
+      background: 'transparent',
+      color: '#f8fafc', 
+      minHeight: '100vh', 
+      position: 'relative' 
+    }}>
       
       {/* ================= 1. VIDEO HERO SECTION ================= */}
       <section 
@@ -394,11 +436,12 @@ const LandingPage = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1
+          zIndex: 1,
+          willChange: 'transform'
         }}>
           <video
             ref={videoRef}
-            src="/Videos/hotel-scroll.mp4"
+             src="/Videos/hotel-scroll-smooth.mp4"
             playsInline
             muted
             preload="auto"
@@ -409,7 +452,9 @@ const LandingPage = () => {
               width: '100%',
               height: '100%',
               objectFit: 'cover',
-              filter: 'brightness(0.9) contrast(1.05)'
+              filter: 'brightness(0.9) contrast(1.05)',
+              transform: 'translateZ(0)',
+              willChange: 'transform'
             }}
           />
 
@@ -452,18 +497,20 @@ const LandingPage = () => {
             </button>
           </div>
 
-          {/* ================= OPENING HERO TITLE ================= */}
-          <div style={{
-            position: 'relative',
-            zIndex: 4,
-            textAlign: 'center',
-            maxWidth: '960px',
-            padding: '0 24px',
-            opacity: heroTitleOpacity,
-            transform: `translateY(-${(1 - heroTitleOpacity) * 35}px)`,
-            pointerEvents: heroTitleOpacity > 0.1 ? 'auto' : 'none',
-            transition: 'opacity 0.1s linear, transform 0.1s linear'
-          }}>
+          {/* OPENING HERO TITLE (Targeted directly via Ref) */}
+          <div 
+            ref={heroTitleRef}
+            style={{
+              position: 'relative',
+              zIndex: 4,
+              textAlign: 'center',
+              maxWidth: '960px',
+              padding: '0 24px',
+              opacity: 1,
+              transform: 'translate3d(0, 0, 0)',
+              willChange: 'opacity, transform'
+            }}
+          >
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -482,26 +529,26 @@ const LandingPage = () => {
               </span>
             </div>
 
-           <h1 style={{
-  fontFamily: "'Playfair Display', Georgia, serif",
-  fontSize: 'clamp(40px, 6vw, 82px)',
-  fontWeight: '600',
-  lineHeight: '1.1',
-  letterSpacing: '-0.5px',
-  marginBottom: '20px',
-  color: '#ffffff',
-  textShadow: '0 4px 35px rgba(0, 0, 0, 0.95)'
-}}>
-  Where Bespoke Grandeur Meets <br />
-  <span style={{
-    fontStyle: 'italic',
-    color: '#d4af37',
-    textShadow: '0 0 25px rgba(212, 175, 55, 0.45)',
-    display: 'inline-block'
-  }}>
-    Unrivaled Hospitality
-  </span>
-</h1>
+            <h1 style={{
+              fontFamily: "'Playfair Display', Georgia, serif",
+              fontSize: 'clamp(40px, 6vw, 82px)',
+              fontWeight: '600',
+              lineHeight: '1.1',
+              letterSpacing: '-0.5px',
+              marginBottom: '20px',
+              color: '#ffffff',
+              textShadow: '0 4px 35px rgba(0, 0, 0, 0.95)'
+            }}>
+              Where Bespoke Grandeur Meets <br />
+              <span style={{
+                fontStyle: 'italic',
+                color: '#d4af37',
+                textShadow: '0 0 25px rgba(212, 175, 55, 0.45)',
+                display: 'inline-block'
+              }}>
+                Unrivaled Hospitality
+              </span>
+            </h1>
 
             <p style={{
               fontSize: 'clamp(14.5px, 1.8vw, 17.5px)',
@@ -527,34 +574,41 @@ const LandingPage = () => {
           position: 'relative'
         }}
       >
-        <div style={{
-          position: 'sticky',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100vh',
-          overflow: 'hidden',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 2,
-          background: '#04070f'
-        }}>
-
-          {/* ================= SLIDE 0: THE PRESIDENTIAL SUITES (ARCH EXPANDS) ================= */}
-          <div style={{
-            position: 'absolute',
-            width: `${arch0Width}vw`,
-            height: `${arch0Height}vh`,
-            borderRadius: `${arch0Radius}px ${arch0Radius}px 0 0`,
+        <div 
+          ref={showcaseContainerRef}
+          style={{
+            position: 'sticky',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100vh',
             overflow: 'hidden',
-            zIndex: 1,
-            boxShadow: '0 30px 100px rgba(0,0,0,0.95)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            transition: 'border-radius 0.05s linear'
-          }}>
+            zIndex: 2,
+            background: '#04070f'
+          }}
+        >
+
+          {/* SLIDE 0: THE PRESIDENTIAL SUITES */}
+          <div 
+            ref={arch0Ref}
+            style={{
+              position: 'absolute',
+              width: '68vw',
+              height: '65vh',
+              borderRadius: '260px 260px 0 0',
+              overflow: 'hidden',
+              zIndex: 1,
+              boxShadow: '0 30px 100px rgba(0,0,0,0.95)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              willChange: 'width, height, border-radius',
+              transform: 'translateZ(0)'
+            }}
+          >
             <img 
               src={showcaseSlides[0].customImg} 
               alt={showcaseSlides[0].title}
@@ -574,16 +628,18 @@ const LandingPage = () => {
               background: 'radial-gradient(ellipse at center, rgba(5,8,17,0.1) 0%, rgba(5,8,17,0.6) 75%, #050811 100%)'
             }} />
 
-            {/* Initial Intro Arch Text (like "CULINARY ODYSSEY BY THE SEA") */}
-            <div style={{
-              position: 'absolute',
-              zIndex: 3,
-              textAlign: 'center',
-              padding: '0 24px',
-              maxWidth: '850px',
-              opacity: intro0Opacity,
-              transform: `scale(${1 + p0 * 0.1})`
-            }}>
+            <div 
+              ref={intro0Ref}
+              style={{
+                position: 'absolute',
+                zIndex: 3,
+                textAlign: 'center',
+                padding: '0 24px',
+                maxWidth: '850px',
+                opacity: 1,
+                willChange: 'opacity, transform'
+              }}
+            >
               <h2 style={{
                 fontFamily: "'Playfair Display', Georgia, serif",
                 fontSize: 'clamp(36px, 5.5vw, 68px)',
@@ -598,16 +654,18 @@ const LandingPage = () => {
               </h2>
             </div>
 
-            {/* Revealed Full-Screen Title ("THE PRESIDENTIAL SUITES") */}
-            <div style={{
-              position: 'absolute',
-              zIndex: 4,
-              textAlign: 'center',
-              padding: '0 24px',
-              maxWidth: '1000px',
-              opacity: slide0TitleOpacity,
-              transform: `translateY(${(1 - p0) * 30}px)`
-            }}>
+            <div 
+              ref={title0Ref}
+              style={{
+                position: 'absolute',
+                zIndex: 4,
+                textAlign: 'center',
+                padding: '0 24px',
+                maxWidth: '1000px',
+                opacity: 0,
+                willChange: 'opacity, transform'
+              }}
+            >
               <div style={{
                 color: '#d4af37',
                 fontSize: '12px',
@@ -646,23 +704,27 @@ const LandingPage = () => {
             </div>
           </div>
 
-          {/* ================= SLIDE 1: THE GRAND FINE DINING (ARCH SLIDES UP OVER SLIDE 0) ================= */}
-          <div style={{
-            position: 'absolute',
-            bottom: 0,
-            width: `${slide1Width}vw`,
-            height: `${slide1Height}vh`,
-            borderRadius: `${slide1Radius}px ${slide1Radius}px 0 0`,
-            transform: `translate3d(0, ${slide1Y}%, 0)`,
-            overflow: 'hidden',
-            zIndex: 2,
-            boxShadow: p1 > 0.01 && p1 < 0.99 ? '0 -35px 90px rgba(0,0,0,0.95)' : 'none',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: '#050811'
-          }}>
+          {/* SLIDE 1: THE GRAND FINE DINING */}
+          <div 
+            ref={slide1Ref}
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              width: '72vw',
+              height: '70vh',
+              borderRadius: '240px 240px 0 0',
+              transform: 'translate3d(0, 105%, 0)',
+              overflow: 'hidden',
+              zIndex: 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: '#050811',
+              willChange: 'transform, width, height, border-radius'
+            }}
+          >
             <img 
+              ref={slide1ImgRef}
               src={showcaseSlides[1].customImg} 
               alt={showcaseSlides[1].title}
               onError={(e) => { e.target.onerror = null; e.target.src = showcaseSlides[1].img; }}
@@ -672,8 +734,9 @@ const LandingPage = () => {
                 width: '100%',
                 height: '100%',
                 objectFit: 'cover',
-                transform: `translate3d(0, ${slide1ImgParallax}%, 0)`,
-                filter: 'brightness(0.88) contrast(1.06)'
+                transform: 'translate3d(0, -22%, 0)',
+                filter: 'brightness(0.88) contrast(1.06)',
+                willChange: 'transform'
               }}
             />
             <div style={{
@@ -682,15 +745,18 @@ const LandingPage = () => {
               background: 'radial-gradient(ellipse at center, rgba(5,8,17,0.1) 0%, rgba(5,8,17,0.6) 75%, #050811 100%)'
             }} />
 
-            <div style={{
-              position: 'relative',
-              zIndex: 3,
-              textAlign: 'center',
-              padding: '0 24px',
-              maxWidth: '1000px',
-              opacity: slide1TitleOpacity,
-              transform: `translateY(${(1 - p1) * 40}px)`
-            }}>
+            <div 
+              ref={slide1TitleRef}
+              style={{
+                position: 'relative',
+                zIndex: 3,
+                textAlign: 'center',
+                padding: '0 24px',
+                maxWidth: '1000px',
+                opacity: 0,
+                willChange: 'opacity, transform'
+              }}
+            >
               <div style={{
                 color: '#d4af37',
                 fontSize: '12px',
@@ -729,23 +795,27 @@ const LandingPage = () => {
             </div>
           </div>
 
-          {/* ================= SLIDE 2: THE AMBER BAR & CELLAR (ARCH SLIDES UP OVER SLIDE 1) ================= */}
-          <div style={{
-            position: 'absolute',
-            bottom: 0,
-            width: `${slide2Width}vw`,
-            height: `${slide2Height}vh`,
-            borderRadius: `${slide2Radius}px ${slide2Radius}px 0 0`,
-            transform: `translate3d(0, ${slide2Y}%, 0)`,
-            overflow: 'hidden',
-            zIndex: 3,
-            boxShadow: p2 > 0.01 && p2 < 0.99 ? '0 -35px 90px rgba(0,0,0,0.95)' : 'none',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: '#050811'
-          }}>
+          {/* SLIDE 2: THE AMBER BAR & CELLAR */}
+          <div 
+            ref={slide2Ref}
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              width: '72vw',
+              height: '70vh',
+              borderRadius: '240px 240px 0 0',
+              transform: 'translate3d(0, 105%, 0)',
+              overflow: 'hidden',
+              zIndex: 3,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: '#050811',
+              willChange: 'transform, width, height, border-radius'
+            }}
+          >
             <img 
+              ref={slide2ImgRef}
               src={showcaseSlides[2].customImg} 
               alt={showcaseSlides[2].title}
               onError={(e) => { e.target.onerror = null; e.target.src = showcaseSlides[2].img; }}
@@ -755,8 +825,9 @@ const LandingPage = () => {
                 width: '100%',
                 height: '100%',
                 objectFit: 'cover',
-                transform: `translate3d(0, ${slide2ImgParallax}%, 0)`,
-                filter: 'brightness(0.88) contrast(1.06)'
+                transform: 'translate3d(0, -22%, 0)',
+                filter: 'brightness(0.88) contrast(1.06)',
+                willChange: 'transform'
               }}
             />
             <div style={{
@@ -765,15 +836,18 @@ const LandingPage = () => {
               background: 'radial-gradient(ellipse at center, rgba(5,8,17,0.1) 0%, rgba(5,8,17,0.6) 75%, #050811 100%)'
             }} />
 
-            <div style={{
-              position: 'relative',
-              zIndex: 3,
-              textAlign: 'center',
-              padding: '0 24px',
-              maxWidth: '1000px',
-              opacity: slide2TitleOpacity,
-              transform: `translateY(${(1 - p2) * 40}px)`
-            }}>
+            <div 
+              ref={slide2TitleRef}
+              style={{
+                position: 'relative',
+                zIndex: 3,
+                textAlign: 'center',
+                padding: '0 24px',
+                maxWidth: '1000px',
+                opacity: 0,
+                willChange: 'opacity, transform'
+              }}
+            >
               <div style={{
                 color: '#d4af37',
                 fontSize: '12px',
@@ -824,12 +898,13 @@ const LandingPage = () => {
           }}>
             {[0, 1, 2].map((i) => (
               <div 
-                key={i} 
+                key={i}
+                ref={(el) => (dotsRef.current[i] = el)}
                 style={{
-                  width: activeDot === i ? '30px' : '8px',
+                  width: i === 0 ? '30px' : '8px',
                   height: '4px',
                   borderRadius: '4px',
-                  background: activeDot === i ? '#d4af37' : 'rgba(255,255,255,0.3)',
+                  background: i === 0 ? '#d4af37' : 'rgba(255,255,255,0.3)',
                   transition: 'all 0.3s ease'
                 }} 
               />
