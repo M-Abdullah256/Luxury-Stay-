@@ -69,6 +69,7 @@ const BillingInvoices = () => {
 
     try {
       await API.post(`/billing/generate/${selectedReservationId}`);
+      setSelectedReservationId('');
       setGenerateModalOpen(false);
       fetchData();
     } catch (err) {
@@ -117,7 +118,7 @@ const BillingInvoices = () => {
   const paidCount = bills.filter((b) => b.paymentStatus === 'Paid').length;
   const pendingCount = bills.filter((b) => b.paymentStatus !== 'Paid').length;
 
-  // Filter bills
+  // Filter bills for the table
   const filteredBills = bills.filter((b) => {
     const matchesSearch = 
       b.invoiceNumber?.toLowerCase().includes(search.toLowerCase()) ||
@@ -126,6 +127,17 @@ const BillingInvoices = () => {
     const matchesStatus = statusFilter ? b.paymentStatus === statusFilter : true;
     return matchesSearch && matchesStatus;
   });
+
+  // Filter out reservations that already have a bill generated
+  const billedReservationIds = new Set(
+    bills
+      .map((b) => (typeof b.reservation === 'object' ? b.reservation?._id : b.reservation))
+      .filter(Boolean)
+  );
+
+  const availableReservations = reservations.filter(
+    (r) => !billedReservationIds.has(r._id)
+  );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', color: '#f8fafc', paddingBottom: '60px' }}>
@@ -236,7 +248,7 @@ const BillingInvoices = () => {
           </div>
         </div>
 
-        {/* Unpaid Bills Indicator */}
+        {/* Settlement Rate Indicator */}
         <div style={kpiCardStyle}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
             <span style={{ fontSize: '11.5px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>Settlement Rate</span>
@@ -560,11 +572,17 @@ const BillingInvoices = () => {
                   style={fieldInputStyle}
                 >
                   <option value="">-- Choose Booking Reference --</option>
-                  {reservations.map((r) => (
-                    <option key={r._id} value={r._id} style={{ background: '#0d1527', color: '#fff' }}>
-                      {r.bookingReference} — {r.guest?.fullName} (Suite #{r.room?.roomNumber})
+                  {availableReservations.length === 0 ? (
+                    <option disabled value="" style={{ background: '#0d1527', color: '#94a3b8' }}>
+                      No unbilled reservations available
                     </option>
-                  ))}
+                  ) : (
+                    availableReservations.map((r) => (
+                      <option key={r._id} value={r._id} style={{ background: '#0d1527', color: '#fff' }}>
+                        {r.bookingReference} — {r.guest?.fullName} (Suite #{r.room?.roomNumber})
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 
@@ -572,7 +590,17 @@ const BillingInvoices = () => {
                 <button type="button" onClick={() => setGenerateModalOpen(false)} className="btn-secondary" style={{ padding: '8px 18px', fontSize: '13px' }}>
                   Cancel
                 </button>
-                <button type="submit" className="btn-gold" style={{ padding: '8px 20px', fontSize: '13px' }}>
+                <button 
+                  type="submit" 
+                  disabled={availableReservations.length === 0} 
+                  className="btn-gold" 
+                  style={{ 
+                    padding: '8px 20px', 
+                    fontSize: '13px',
+                    opacity: availableReservations.length === 0 ? 0.5 : 1,
+                    cursor: availableReservations.length === 0 ? 'not-allowed' : 'pointer'
+                  }}
+                >
                   Create Folio
                 </button>
               </div>

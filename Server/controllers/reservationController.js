@@ -93,6 +93,8 @@ exports.createReservation = async (req, res) => {
       notes: notes || ''
     });
 
+    await Room.findByIdAndUpdate(roomId, { status: 'Reserved' });
+
     res.status(201).json({
       success: true,
       message: 'Reservation created successfully',

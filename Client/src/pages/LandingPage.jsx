@@ -1065,7 +1065,11 @@ const LandingPage = () => {
                   
                   <div style={{ position: 'absolute', top: '12px', right: '12px' }}>
                     <span style={{
-                      background: isAvailable ? 'rgba(16, 185, 129, 0.92)' : 'rgba(244, 63, 94, 0.92)',
+                      background: room.status === 'Available' 
+  ? 'rgba(16, 185, 129, 0.92)' 
+  : room.status === 'Reserved' 
+  ? 'rgba(129, 140, 248, 0.92)' 
+  : 'rgba(244, 63, 94, 0.92)',
                       color: '#ffffff',
                       fontSize: '10.5px',
                       fontWeight: '700',
@@ -1186,7 +1190,7 @@ const LandingPage = () => {
                           transition: 'transform 0.15s ease'
                         }}
                       >
-                        {isAvailable ? 'Reserve Now' : 'Occupied'}
+                        {isAvailable ? 'Reserve Now' : room.status}
                       </button>
                     </div>
                   </div>
@@ -1434,7 +1438,7 @@ const LandingPage = () => {
                     cursor: roomDetailModal.status === 'Available' ? 'pointer' : 'not-allowed' 
                   }}
                 >
-                  {roomDetailModal.status === 'Available' ? 'Reserve Suite' : 'Occupied'}
+                  {roomDetailModal.status === 'Available' ? 'Reserve Suite' : roomDetailModal.status}
                 </button>
               </div>
             </div>

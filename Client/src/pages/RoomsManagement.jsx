@@ -22,6 +22,7 @@ import {
 const StatusDropdown = ({ currentStatus, isOpen, onToggle, onSelect }) => {
   const statuses = [
     { label: 'Available', color: '#10b981', bg: 'rgba(16, 185, 129, 0.12)', border: 'rgba(16, 185, 129, 0.35)' },
+    { label: 'Reserved', color: '#818cf8', bg: 'rgba(129, 140, 248, 0.12)', border: 'rgba(129, 140, 248, 0.35)' },
     { label: 'Occupied', color: '#fb7185', bg: 'rgba(244, 63, 94, 0.12)', border: 'rgba(244, 63, 94, 0.35)' },
     { label: 'Cleaning', color: '#fbbf24', bg: 'rgba(245, 158, 11, 0.12)', border: 'rgba(245, 158, 11, 0.35)' },
     { label: 'Maintenance', color: '#cbd5e1', bg: 'rgba(148, 163, 184, 0.12)', border: 'rgba(148, 163, 184, 0.35)' }
@@ -380,7 +381,7 @@ const RoomsManagement = () => {
 
         {/* Status Filter Buttons */}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {['', 'Available', 'Occupied', 'Cleaning', 'Maintenance'].map((st) => {
+          {['', 'Available', 'Reserved','Occupied', 'Cleaning', 'Maintenance'].map((st) => {
             const isSelected = statusFilter === st;
             return (
               <button
@@ -432,6 +433,7 @@ const RoomsManagement = () => {
           {filteredRooms.map((room) => {
             const statusColor = 
               room.status === 'Available' ? '#10b981' :
+              room.status === 'Reserved' ? '#818cf8' :
               room.status === 'Occupied' ? '#f43f5e' :
               room.status === 'Cleaning' ? '#f59e0b' : '#94a3b8';
 

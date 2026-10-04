@@ -414,32 +414,27 @@ const PublicRooms = () => {
                           <Info size={14} />
                         </button>
 
-                        <button 
-                          onClick={() => handleOpenBooking(room)}
-                          disabled={!isAvailable}
-                          style={{
-                            background: isAvailable ? 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)' : '#334155',
-                            color: isAvailable ? '#070b14' : '#94a3b8',
-                            fontWeight: '700',
-                            fontSize: '12px',
-                            letterSpacing: '0.4px',
-                            textTransform: 'uppercase',
-                            padding: '9px 18px',
-                            borderRadius: '8px',
-                            border: 'none',
-                            cursor: isAvailable ? 'pointer' : 'not-allowed',
-                            boxShadow: isAvailable ? '0 3px 12px rgba(212, 175, 55, 0.25)' : 'none',
-                            transition: 'transform 0.15s ease'
-                          }}
-                          onMouseEnter={(e) => {
-                            if (isAvailable) e.currentTarget.style.transform = 'translateY(-1px)';
-                          }}
-                          onMouseLeave={(e) => {
-                            if (isAvailable) e.currentTarget.style.transform = 'translateY(0)';
-                          }}
-                        >
-                          {isAvailable ? 'Book Suite' : 'Occupied'}
-                        </button>
+                       <button 
+  onClick={() => handleOpenBooking(room)}
+  disabled={!isAvailable}
+  style={{
+    background: isAvailable ? 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)' : '#1e293b',
+    color: isAvailable ? '#070b14' : '#94a3b8',
+    fontWeight: '700',
+    fontSize: '12px',
+    letterSpacing: '0.4px',
+    textTransform: 'uppercase',
+    padding: '9px 18px',
+    borderRadius: '8px',
+    border: 'none',
+    cursor: isAvailable ? 'pointer' : 'not-allowed',
+    boxShadow: isAvailable ? '0 3px 12px rgba(212, 175, 55, 0.25)' : 'none',
+    transition: 'transform 0.15s ease'
+  }}
+>
+  {/* Yahan 'Occupied' hardcoded hatakar room.status likhein */}
+  {isAvailable ? 'Book Suite' : room.status}
+</button>
                       </div>
                     </div>
                   </div>
