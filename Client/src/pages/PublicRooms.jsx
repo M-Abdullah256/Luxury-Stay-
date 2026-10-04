@@ -179,7 +179,7 @@ const PublicRooms = () => {
           {/* Category Filter Pills */}
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
             {[
-              { label: 'All Suites', val: '' },
+              { label: 'All Rooms', val: '' },
               { label: 'Standard', val: 'Standard' },
               { label: 'Deluxe', val: 'Deluxe' },
               { label: 'Suite', val: 'Suite' },

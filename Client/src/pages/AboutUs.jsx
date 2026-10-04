@@ -65,14 +65,14 @@ const AboutUs = () => {
           letterSpacing: '-0.5px',
           marginBottom: '22px'
         }}>
-          A Synthesis of Sovereign Luxury & <br />
+          Modern Hotel Comfort Meets <br />
           <span style={{
             fontStyle: 'italic',
             background: 'linear-gradient(135deg, #ffffff 0%, #fef08a 50%, #d4af37 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent'
           }}>
-            Computational Precision
+            Smart Technology
           </span>
         </h1>
 
@@ -84,7 +84,7 @@ const AboutUs = () => {
           lineHeight: '1.8',
           fontWeight: '300'
         }}>
-          LuxuryStay Hospitality represents the harmonious convergence of timeless five-star residential luxury and modern, mission-critical software engineering—built from the ground up to redefine how grand properties operate.
+          LuxuryStay brings together five-star hotel comfort and modern web technology. Built from scratch to make online bookings, guest services, and hotel management fast and reliable.
         </p>
 
         {/* 4 Executive Prestige Metrics */}

@@ -86,7 +86,7 @@ const Footer = () => {
           </Link>
 
           <p style={{ fontSize: '13.5px', lineHeight: '1.8', color: '#94a3b8', marginBottom: '24px' }}>
-            Redefining bespoke luxury and high-end residential hospitality across key metropolitan destinations. Curated comfort crafted for the discerning traveler.
+            Providing comfortable stays, quality rooms, and friendly service in the heart of the city. Perfect for families, tourists, and business travelers.
           </p>
 
           <div style={{ display: 'flex', gap: '16px', color: '#d4af37', fontSize: '12px', fontWeight: '600' }}>
@@ -117,7 +117,7 @@ const Footer = () => {
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13.5px' }}>
             <li style={{ color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ width: '4px', height: '4px', background: '#d4af37', borderRadius: '50%' }} />
-              Michelin-Inspired Fine Dining
+              Restaurant & Dining
             </li>
             <li style={{ color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ width: '4px', height: '4px', background: '#d4af37', borderRadius: '50%' }} />

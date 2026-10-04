@@ -388,23 +388,23 @@ const LandingPage = () => {
 
   const showcaseSlides = [
     {
-      tag: 'Sanctuary of Distinction',
+      tag: 'Luxury Rooms',
       title: 'THE PRESIDENTIAL SUITES',
-      desc: 'Master-crafted private suites featuring polished black Italian marble, gold inlay architecture, and dedicated 24-hour private butler craftsmanship.',
+      desc: 'Spacious luxury suites with elegant decor, modern bathrooms, and 24-hour dedicated room service.',
       img: '/Images/room-presidential.jpg',
       customImg: '/Images/showcase-suite.jpg'
     },
     {
-      tag: 'Haute Cuisine & Heritage',
-      title: 'THE GRAND FINE DINING',
-      desc: 'Opulent crystal chandeliers reflecting over mirror-finish tables, hosting Michelin-inspired culinary artistry and curated wine tastings.',
+      tag: 'Food & Dining',
+      title: 'FINE DINING RESTAURANT',
+      desc: 'Enjoy delicious food prepared by expert chefs in a comfortable, beautiful restaurant.',
       img: '/Images/amenity-dining.jpg',
       customImg: '/Images/showcase-dining.jpg'
     },
     {
-      tag: 'Nightlife & Rare Cellar',
+      tag: 'Relaxation & Drinks',
       title: 'THE AMBER BAR & CELLAR',
-      desc: 'A monumental honey-amber backlit onyx bar serving rare vintage spirits and hand-rolled cigars, with live stay billing integration.',
+      desc: 'A calm and stylish evening lounge offering fresh drinks, fine coffees, and relaxing atmosphere.',
       img: '/Images/experience-lounge.jpg',
       customImg: '/Images/showcase-bar.jpg'
     }
@@ -539,14 +539,14 @@ const LandingPage = () => {
               color: '#ffffff',
               textShadow: '0 4px 35px rgba(0, 0, 0, 0.95)'
             }}>
-              Where Bespoke Grandeur Meets <br />
+              Experience True Comfort &<br />
               <span style={{
                 fontStyle: 'italic',
                 color: '#d4af37',
                 textShadow: '0 0 25px rgba(212, 175, 55, 0.45)',
                 display: 'inline-block'
               }}>
-                Unrivaled Hospitality
+                Warm Hospitality
               </span>
             </h1>
 
@@ -561,6 +561,52 @@ const LandingPage = () => {
             }}>
               Discover a rare sanctuary of calm elegance, private butler craftsmanship, and seamless contactless reservations.
             </p>
+            {/* Dual Action Buttons */}
+<div style={{ display: 'flex', gap: '16px', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', marginTop: '36px' }}>
+  <a 
+    href="#residences" 
+    style={{
+      textDecoration: 'none',
+      background: 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)',
+      color: '#070b14',
+      fontWeight: '700',
+      fontSize: '13px',
+      letterSpacing: '1px',
+      textTransform: 'uppercase',
+      padding: '14px 32px',
+      borderRadius: '40px',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '8px',
+      boxShadow: '0 8px 25px rgba(212, 175, 55, 0.35)'
+    }}
+  >
+    <span>Explore Suites</span>
+    <ArrowRight size={16} />
+  </a>
+
+  <button 
+    onClick={() => setServiceModalOpen(true)}
+    style={{
+      background: 'rgba(5, 8, 17, 0.75)',
+      border: '1px solid rgba(212, 175, 55, 0.5)',
+      color: '#ffffff',
+      padding: '14px 28px',
+      fontSize: '13px',
+      fontWeight: '600',
+      letterSpacing: '0.5px',
+      borderRadius: '40px',
+      cursor: 'pointer',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '8px',
+      backdropFilter: 'blur(10px)'
+    }}
+  >
+    <BellRing size={16} color="#d4af37" />
+    <span>Request Concierge</span>
+  </button>
+</div>
           </div>
 
         </div>
@@ -650,7 +696,7 @@ const LandingPage = () => {
                 lineHeight: '1.1',
                 textShadow: '0 4px 30px rgba(0,0,0,0.95)'
               }}>
-                A SANCTUARY OF ETERNAL GRANDEUR
+                YOUR COMFORT IS OUR PRIORITY
               </h2>
             </div>
 
@@ -928,7 +974,7 @@ const LandingPage = () => {
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
             <div style={{ width: '25px', height: '1px', background: '#d4af37' }} />
             <span style={{ color: '#d4af37', fontSize: '11px', fontWeight: '700', letterSpacing: '3px', textTransform: 'uppercase' }}>
-              Accommodations Portfolio
+              Our Rooms & Suites
             </span>
             <div style={{ width: '25px', height: '1px', background: '#d4af37' }} />
           </div>
@@ -939,7 +985,7 @@ const LandingPage = () => {
             color: '#ffffff',
             margin: '0 0 20px 0'
           }}>
-            Suites, Penthouses & Residences
+            Find Your Perfect Room
           </h2>
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -962,7 +1008,7 @@ const LandingPage = () => {
                     transition: 'all 0.2s ease'
                   }}
                 >
-                  {cat === 'All' ? 'All Residences' : cat}
+                  {cat === 'All' ? 'All Rooms' : cat}
                 </button>
               );
             })}
@@ -978,7 +1024,7 @@ const LandingPage = () => {
         }}>
           {loading ? (
             <div style={{ textAlign: 'center', padding: '60px 0', gridColumn: '1 / -1', color: '#d4af37' }}>
-              Retrieving live suite availability...
+              Loading available rooms...
             </div>
           ) : filteredRooms.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 0', gridColumn: '1 / -1', color: '#94a3b8' }}>
@@ -1056,7 +1102,7 @@ const LandingPage = () => {
                     </h3>
 
                     <p style={{ color: '#94a3b8', fontSize: '13px', lineHeight: '1.6', marginBottom: '16px', minHeight: '42px' }}>
-                      {room.description || 'Master-crafted suite offering expansive views, premium Italian linens, and dedicated 24/7 butler desk.'}
+                      {room.description || 'Clean, comfortable room with modern amenities, comfortable beds, and 24/7 room service.'}
                     </p>
 
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '20px' }}>
@@ -1140,7 +1186,7 @@ const LandingPage = () => {
                           transition: 'transform 0.15s ease'
                         }}
                       >
-                        {isAvailable ? 'Reserve Suite' : 'Occupied'}
+                        {isAvailable ? 'Reserve Now' : 'Occupied'}
                       </button>
                     </div>
                   </div>
@@ -1161,10 +1207,10 @@ const LandingPage = () => {
           
           <div style={{ textAlign: 'center', marginBottom: '50px' }}>
             <span style={{ color: '#d4af37', fontSize: '11px', fontWeight: '700', letterSpacing: '3px', textTransform: 'uppercase' }}>
-              Signature Resort Privileges
+              Special Guest Services
             </span>
             <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 'clamp(28px, 4vw, 42px)', color: '#ffffff', margin: '8px 0' }}>
-              Bespoke Guest Craftsmanship
+              Made for Your Comfort
             </h2>
           </div>
 
@@ -1183,7 +1229,7 @@ const LandingPage = () => {
                   <span style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Private Fleet</span>
                 </div>
                 <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '19px', color: '#fff', marginBottom: '8px' }}>
-                  Rolls-Royce Chauffeur Transfer
+                  Airport Pickup & Drop-off
                 </h3>
                 <p style={{ color: '#94a3b8', fontSize: '13px', lineHeight: '1.6' }}>
                   Complimentary airport escort and city transportation with our dedicated white-glove private drivers.
@@ -1219,7 +1265,7 @@ const LandingPage = () => {
                   <span style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Nightlife & Cellar</span>
                 </div>
                 <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '19px', color: '#fff', marginBottom: '8px' }}>
-                  The 50th-Floor Cigar & Wine Club
+                  50th-Floor Rooftop Lounge
                 </h3>
                 <p style={{ color: '#94a3b8', fontSize: '13px', lineHeight: '1.6' }}>
                   Members-only access to vintage cognac cellars, rare single malts, and hand-rolled private reserve cigars.
@@ -1240,7 +1286,7 @@ const LandingPage = () => {
           </div>
 
           <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 'clamp(28px, 4vw, 40px)', color: '#ffffff', marginBottom: '12px' }}>
-            Guest Experience & Verified Impressions
+            What Our Guests Say
           </h2>
 
           <button 
@@ -1262,7 +1308,7 @@ const LandingPage = () => {
               margin: '20px 0 50px 0'
             }}
           >
-            <Star size={14} /> Submit Stay Review
+            <Star size={14} /> Leave a Review
           </button>
 
           <div style={{
@@ -1442,7 +1488,7 @@ const LandingPage = () => {
                     {bookingSuccess.bookingReference}
                   </div>
                   <div style={{ fontSize: '13px', color: '#cbd5e1', marginTop: '6px' }}>
-                    Estimated Tariff: <strong>${bookingSuccess.roomCharges}</strong>
+                    Total Estimated Cost: <strong>${bookingSuccess.roomCharges}</strong>
                   </div>
                 </div>
                 <button 
@@ -1699,7 +1745,7 @@ const LandingPage = () => {
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button type="button" onClick={() => setServiceModalOpen(false)} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', color: '#cbd5e1', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>Cancel</button>
-                <button type="submit" style={{ background: 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)', color: '#070b14', fontWeight: '700', padding: '8px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px' }}>Relay Request</button>
+                <button type="submit" style={{ background: 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)', color: '#070b14', fontWeight: '700', padding: '8px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px' }}>Send Request</button>
               </div>
             </form>
           </div>
