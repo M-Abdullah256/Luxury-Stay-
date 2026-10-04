@@ -185,9 +185,21 @@ const RoomsManagement = () => {
     }
   };
 
-  useEffect(() => {
-    fetchRooms();
-  }, []);
+  // Ab yeh karein:
+useEffect(() => {
+  fetchRooms();
+
+  // 1. Har 10 second baad background mein auto-sync hoga
+  const interval = setInterval(fetchRooms, 10000);
+
+  // 2. Jaise hi Admin is tab par wapis aayega, foran live data fetch hoga
+  window.addEventListener('focus', fetchRooms);
+
+  return () => {
+    clearInterval(interval);
+    window.removeEventListener('focus', fetchRooms);
+  };
+}, []);
 
   // Quick Status Switcher
   const handleStatusChange = async (roomId, newStatus) => {

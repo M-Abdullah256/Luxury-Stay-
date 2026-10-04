@@ -53,19 +53,32 @@ const PublicRooms = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  useEffect(() => {
-    const fetchRooms = async () => {
-      try {
-        const res = await API.get('/rooms');
-        setRooms(res.data.rooms || []);
-      } catch (err) {
-        console.error('Error fetching rooms:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchRooms();
-  }, []);
+// Ab yeh karein:
+useEffect(() => {
+  const fetchRooms = async () => {
+    try {
+      const res = await API.get('/rooms');
+      setRooms(res.data.rooms || []);
+    } catch (err) {
+      console.error('Error fetching rooms:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchRooms();
+
+  // 1. Har 6 second baad chupke se live status check karega
+  const interval = setInterval(fetchRooms, 6000);
+
+  // 2. Jaise hi user is tab par click karega, foran new state update ho jayegi
+  window.addEventListener('focus', fetchRooms);
+
+  return () => {
+    clearInterval(interval);
+    window.removeEventListener('focus', fetchRooms);
+  };
+}, []);
 
   const handleOpenBooking = (room) => {
     if (room.status !== 'Available') return;
@@ -101,7 +114,13 @@ const PublicRooms = () => {
         notes: bookingForm.specialRequests
       });
 
-      setBookingSuccess(resRes.data.reservation);
+      // Ab yeh karein:
+setBookingSuccess(resRes.data.reservation);
+
+// 👇 Yeh line add karein (is se page refresh kiye baghair foran status update ho jayega)
+setRooms((prev) =>
+  prev.map((r) => (r._id === selectedRoom._id ? { ...r, status: 'Reserved' } : r))
+);
     } catch (err) {
       alert(err.response?.data?.message || 'Booking failed. Please verify dates and details.');
     } finally {

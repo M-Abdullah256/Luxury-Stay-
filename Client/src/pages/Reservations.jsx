@@ -67,9 +67,21 @@ const Reservations = () => {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+ // Ab yeh karein:
+useEffect(() => {
+  fetchData();
+
+  // 1. Har 10 second baad naye bookings check karega
+  const interval = setInterval(fetchData, 10000);
+
+  // 2. Tab focus hote hi foran update karega
+  window.addEventListener('focus', fetchData);
+
+  return () => {
+    clearInterval(interval);
+    window.removeEventListener('focus', fetchData);
+  };
+}, []);
 
   // Automated Check-In
   const handleCheckIn = async (reservationId, roomNumber) => {
