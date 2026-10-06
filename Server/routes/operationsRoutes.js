@@ -8,7 +8,8 @@ const {
   deleteHousekeepingTask,
   getMaintenanceIssues,
   reportMaintenanceIssue,
-  resolveMaintenanceIssue
+  resolveMaintenanceIssue,
+  deleteMaintenanceIssue
 } = require('../controllers/operationsController');
 
 const { protect } = require('../middleware/authMiddleware');
@@ -26,5 +27,6 @@ router.delete('/housekeeping/:id', deleteHousekeepingTask);
 router.get('/maintenance', getMaintenanceIssues);
 router.post('/maintenance', reportMaintenanceIssue);
 router.patch('/maintenance/:id/resolve', resolveMaintenanceIssue);
+router.delete('/maintenance/:id', deleteMaintenanceIssue);
 
 module.exports = router;

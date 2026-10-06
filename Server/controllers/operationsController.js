@@ -179,3 +179,27 @@ exports.deleteHousekeepingTask = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+// DELETE MAINTENANCE ISSUE
+exports.deleteMaintenanceIssue = async (req, res) => {
+  try {
+    // Sirf Admin allow hoga
+    if (req.user && req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access Denied: Only Admin can delete maintenance tickets' 
+      });
+    }
+
+    const issue = await Maintenance.findByIdAndDelete(req.params.id);
+    if (!issue) {
+      return res.status(404).json({ success: false, message: 'Maintenance ticket not found' });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'Maintenance ticket deleted successfully' 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
