@@ -467,12 +467,12 @@ const DashboardOverview = () => {
                   </div>
 
                   <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.04)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ fontSize: '12.5px', color: '#ffffff', fontWeight: '600' }}>
-                      {fb.guest?.fullName || 'Verified Resident'}
-                    </div>
-                    <span style={{ fontSize: '10px', color: '#d4af37', background: 'rgba(212, 175, 55, 0.1)', padding: '2px 8px', borderRadius: '10px', fontWeight: '600' }}>
-                      Verified Stay
-                    </span>
+                  <div style={{ fontSize: '12.5px', color: '#ffffff', fontWeight: '600' }}>
+  {fb.guest?.fullName || 'Verified Resident'}
+</div>
+<span style={{ fontSize: '10px', color: '#d4af37', background: 'rgba(212, 175, 55, 0.1)', padding: '2px 8px', borderRadius: '10px', fontWeight: '600' }}>
+  Verified Stay
+</span>
                   </div>
                 </div>
               ))}

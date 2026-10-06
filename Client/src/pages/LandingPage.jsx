@@ -456,8 +456,8 @@ const handleServiceSubmit = async (e) => {
     e.preventDefault();
     try {
       await API.post('/extras/feedback', {
-        guestName: feedbackForm.guestName,
-        suiteStayed: feedbackForm.suiteStayed,
+        guestName: feedbackForm.guestName || 'Verified Resident',
+        suiteStayed: feedbackForm.suiteStayed || 'Luxury Suite',
         ratings: {
           cleanliness: Number(feedbackForm.cleanliness),
           service: Number(feedbackForm.service),
@@ -466,12 +466,26 @@ const handleServiceSubmit = async (e) => {
         },
         comments: feedbackForm.comments
       });
+
       setFeedbackModalOpen(false);
       setFeedbackForm({ guestName: '', suiteStayed: '', cleanliness: 5, service: 5, roomComfort: 5, comments: '' });
-      alert('Thank you! Your verified feedback has been submitted.');
+
+      // Real Success SweetAlert
+      Swal.fire({
+        title: '<span style="font-family: \'Playfair Display\', serif; font-size: 22px; color: #fff;">Review Submitted!</span>',
+        html: '<p style="color: #94a3b8; font-size: 13.5px;">Thank you! Your verified impressions have been transmitted to the executive management ledger.</p>',
+        icon: 'success',
+        iconColor: '#d4af37',
+        confirmButtonText: 'Done',
+        buttonsStyling: false,
+        customClass: {
+          popup: 'luxury-swal-modal',
+          confirmButton: 'luxury-swal-gold-btn'
+        }
+      });
     } catch (err) {
-      alert('Thank you for sharing your feedback!');
-      setFeedbackModalOpen(false);
+      console.error('Feedback Error:', err.response?.data || err.message);
+      alert(err.response?.data?.message || 'Failed to submit feedback.');
     }
   };
 
