@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import API from '../api/axios';
+import Swal from 'sweetalert2';
 import { 
   Users, 
   Plus, 
@@ -15,6 +16,7 @@ import {
   Calendar,
   Award,
   Crown,
+  Trash2,
   CheckCircle2
 } from 'lucide-react';
 
@@ -80,7 +82,63 @@ const GuestsList = () => {
       setSubmitting(false);
     }
   };
+// Delete Guest Dossier with Luxury SweetAlert
+  const handleDeleteGuest = async (guestId, guestName) => {
+    const result = await Swal.fire({
+      title: '<span style="font-family: \'Playfair Display\', serif; font-size: 22px; color: #fff;">Purge Resident Profile?</span>',
+      html: `
+        <p style="color: #94a3b8; font-size: 13.5px; margin-top: 4px; line-height: 1.6;">
+          Are you sure you want to permanently delete the profile dossier for 
+          <span style="white-space: nowrap; display: inline-block; color: #d4af37; font-weight: 700;">${guestName}</span> 
+          from the directory?
+        </p>
+      `,
+      icon: 'warning',
+      iconColor: '#d4af37',
+      showCancelButton: true,
+      confirmButtonText: 'Delete Profile',
+      cancelButtonText: 'Cancel',
+      buttonsStyling: false,
+      customClass: {
+        popup: 'luxury-swal-modal',
+        confirmButton: 'luxury-swal-confirm-btn',
+        cancelButton: 'luxury-swal-cancel-btn'
+      }
+    });
 
+    if (result.isConfirmed) {
+      try {
+        await API.delete(`/guests/${guestId}`);
+        setGuests((prev) => prev.filter((g) => g._id !== guestId));
+
+        Swal.fire({
+          title: '<span style="font-family: \'Playfair Display\', serif; font-size: 20px; color: #fff;">Profile Deleted</span>',
+          html: `<p style="color: #94a3b8; font-size: 13px;">Resident profile for ${guestName} has been removed.</p>`,
+          icon: 'success',
+          iconColor: '#10b981',
+          confirmButtonText: 'Done',
+          buttonsStyling: false,
+          customClass: {
+            popup: 'luxury-swal-modal',
+            confirmButton: 'luxury-swal-gold-btn'
+          }
+        });
+      } catch (err) {
+        Swal.fire({
+          title: '<span style="font-family: \'Playfair Display\', serif; font-size: 20px; color: #fff;">Deletion Error</span>',
+          text: err.response?.data?.message || 'Failed to delete guest profile',
+          icon: 'error',
+          iconColor: '#f43f5e',
+          confirmButtonText: 'Dismiss',
+          buttonsStyling: false,
+          customClass: {
+            popup: 'luxury-swal-modal',
+            confirmButton: 'luxury-swal-cancel-btn'
+          }
+        });
+      }
+    }
+  };
   const filteredGuests = guests.filter((g) => 
     g.fullName?.toLowerCase().includes(search.toLowerCase()) ||
     g.email?.toLowerCase().includes(search.toLowerCase()) ||
@@ -328,6 +386,7 @@ const GuestsList = () => {
                   </div>
 
                   <div style={{ flex: 1 }}>
+                  
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <h3 style={{
                         fontFamily: "'Playfair Display', serif",
@@ -337,9 +396,32 @@ const GuestsList = () => {
                       }}>
                         {guest.fullName}
                       </h3>
-                      <span style={{ fontSize: '10px', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '2px 8px', borderRadius: '10px', fontWeight: '700' }}>
-                        ACTIVE
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '10px', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '2px 8px', borderRadius: '10px', fontWeight: '700' }}>
+                          ACTIVE
+                        </span>
+                        
+                        {/* Delete Guest Button */}
+                        <button
+                          onClick={() => handleDeleteGuest(guest._id, guest.fullName)}
+                          style={{
+                            background: 'rgba(244, 63, 94, 0.08)',
+                            border: '1px solid rgba(244, 63, 94, 0.25)',
+                            color: '#fb7185',
+                            padding: '4px 7px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            transition: 'all 0.15s ease'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(244, 63, 94, 0.2)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(244, 63, 94, 0.08)'}
+                          title="Delete Resident Profile"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
                     </div>
 
                     <div style={{
@@ -615,6 +697,50 @@ const GuestsList = () => {
           .guests-banner-actions {
             display: none !important;
           }
+        }
+          /* Luxury SweetAlert Styling */
+        .luxury-swal-modal {
+          background: rgba(13, 21, 39, 0.98) !important;
+          border: 1px solid rgba(212, 175, 55, 0.35) !important;
+          border-radius: 20px !important;
+          padding: 26px 20px !important;
+          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9) !important;
+          backdrop-filter: blur(12px) !important;
+        }
+        .luxury-swal-confirm-btn {
+          background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%) !important;
+          color: #ffffff !important;
+          font-weight: 700 !important;
+          font-size: 12px !important;
+          text-transform: uppercase !important;
+          letter-spacing: 0.5px !important;
+          padding: 10px 22px !important;
+          border-radius: 10px !important;
+          border: none !important;
+          cursor: pointer !important;
+          margin: 0 6px !important;
+          box-shadow: 0 4px 14px rgba(244, 63, 94, 0.35) !important;
+        }
+        .luxury-swal-cancel-btn {
+          background: rgba(255, 255, 255, 0.06) !important;
+          border: 1px solid rgba(255, 255, 255, 0.15) !important;
+          color: #cbd5e1 !important;
+          font-size: 12px !important;
+          font-weight: 600 !important;
+          padding: 10px 20px !important;
+          border-radius: 10px !important;
+          cursor: pointer !important;
+          margin: 0 6px !important;
+        }
+        .luxury-swal-gold-btn {
+          background: linear-gradient(135deg, #d4af37 0%, #aa7c11 100%) !important;
+          color: #070b14 !important;
+          font-weight: 700 !important;
+          font-size: 12px !important;
+          padding: 10px 24px !important;
+          border-radius: 10px !important;
+          border: none !important;
+          cursor: pointer !important;
         }
       `}</style>
 

@@ -120,3 +120,22 @@ exports.updateGuest = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+// @desc    Delete guest profile
+// @route   DELETE /api/guests/:id
+// @access  Private (Staff only)
+exports.deleteGuest = async (req, res) => {
+  try {
+    const guest = await Guest.findByIdAndDelete(req.params.id);
+
+    if (!guest) {
+      return res.status(404).json({ success: false, message: 'Guest profile not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Guest profile deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

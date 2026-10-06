@@ -4,7 +4,8 @@ const {
   getAllGuests,
   getGuestById,
   createGuest,
-  updateGuest
+  updateGuest,
+   deleteGuest
 } = require('../controllers/guestController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -15,5 +16,6 @@ router.post('/', createGuest);
 router.get('/', protect, getAllGuests);
 router.get('/:id', protect, getGuestById);
 router.put('/:id', protect, updateGuest);
+router.delete('/:id', protect, deleteGuest);
 
 module.exports = router;
