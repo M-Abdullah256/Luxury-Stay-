@@ -5,6 +5,7 @@ const {
   createHousekeepingTask,
   completeCleaningTask,
   quickCleanRoom,
+  deleteHousekeepingTask,
   getMaintenanceIssues,
   reportMaintenanceIssue,
   resolveMaintenanceIssue
@@ -18,7 +19,8 @@ router.use(protect);
 router.get('/housekeeping', getHousekeepingTasks);
 router.post('/housekeeping', createHousekeepingTask);
 router.patch('/housekeeping/:id/complete', completeCleaningTask);
-router.patch('/housekeeping/quick-clean/:roomId', quickCleanRoom); // <-- Naya Guaranteed Logger Route
+router.patch('/housekeeping/quick-clean/:roomId', quickCleanRoom); 
+router.delete('/housekeeping/:id', deleteHousekeepingTask);
 
 // Maintenance Routes
 router.get('/maintenance', getMaintenanceIssues);

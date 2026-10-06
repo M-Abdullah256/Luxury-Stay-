@@ -5,7 +5,8 @@ const {
   createReservation,
   checkIn,
   checkOut,
-  lookupReservation
+  lookupReservation,
+  deleteReservation
 } = require('../controllers/reservationController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -17,5 +18,6 @@ router.get('/lookup/:reference', lookupReservation);
 router.get('/', protect, getAllReservations);
 router.patch('/:id/check-in', protect, checkIn);
 router.patch('/:id/check-out', protect, checkOut);
+router.delete('/:id', protect, deleteReservation);
 
 module.exports = router;

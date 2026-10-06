@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import API from '../api/axios';
+import Swal from 'sweetalert2';
 import { BedDouble, Search, Sparkles, Check, X, Info } from 'lucide-react';
 
 const PublicRooms = () => {
@@ -122,7 +123,34 @@ setRooms((prev) =>
   prev.map((r) => (r._id === selectedRoom._id ? { ...r, status: 'Reserved' } : r))
 );
     } catch (err) {
-      alert(err.response?.data?.message || 'Booking failed. Please verify dates and details.');
+      console.error('Booking Error:', err.response?.data || err.message);
+      
+      const errorText = err.response?.data?.message || 'Online reservation failed. Please verify all required fields.';
+
+      Swal.fire({
+        title: '<span style="font-family: \'Playfair Display\', serif; font-size: 22px; color: #fff;">Incomplete Reservation</span>',
+        html: `
+          <div style="background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.25); border-radius: 10px; padding: 14px; text-align: left; margin: 10px 0;">
+            <div style="color: #fb7185; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+              Validation Required
+            </div>
+            <p style="color: #cbd5e1; font-size: 13px; line-height: 1.6; margin: 0;">
+              ${errorText}
+            </p>
+          </div>
+          <p style="color: #94a3b8; font-size: 12px; margin: 6px 0 0 0;">
+            Please ensure Full Name, Phone Number, and CNIC/Passport are filled correctly.
+          </p>
+        `,
+        icon: 'warning',
+        iconColor: '#d4af37',
+        confirmButtonText: 'Correct Details',
+        buttonsStyling: false,
+        customClass: {
+          popup: 'luxury-swal-modal',
+          confirmButton: 'luxury-swal-gold-btn'
+        }
+      });
     } finally {
       setSubmittingBooking(false);
     }
@@ -786,7 +814,30 @@ setRooms((prev) =>
           </div>
         </div>
       )}
-
+{/* Luxury SweetAlert Styling */}
+      <style>{`
+        .swal2-container {
+          z-index: 99999 !important;
+        }
+        .luxury-swal-modal {
+          background: rgba(13, 21, 39, 0.98) !important;
+          border: 1px solid rgba(212, 175, 55, 0.35) !important;
+          border-radius: 20px !important;
+          padding: 26px 20px !important;
+          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9) !important;
+          backdrop-filter: blur(12px) !important;
+        }
+        .luxury-swal-gold-btn {
+          background: linear-gradient(135deg, #d4af37 0%, #aa7c11 100%) !important;
+          color: #070b14 !important;
+          font-weight: 700 !important;
+          font-size: 12px !important;
+          padding: 10px 24px !important;
+          border-radius: 10px !important;
+          border: none !important;
+          cursor: pointer !important;
+        }
+      `}</style>
     </div>
   );
 };

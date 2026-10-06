@@ -6,6 +6,7 @@ const {
   getAllServiceRequests,
   createServiceRequest,
   updateServiceStatus,
+  deleteServiceRequest,
   getSettings,
   updateSettings,
   getNotifications,
@@ -21,6 +22,7 @@ router.post('/services', createServiceRequest);
 // PROTECTED ROUTES (Staff Only)
 router.get('/services', protect, getAllServiceRequests);
 router.patch('/services/:id/status', protect, updateServiceStatus);
+router.delete('/services/:id', protect, deleteServiceRequest);
 
 // Settings (Admin only)
 router.get('/settings', protect, getSettings);

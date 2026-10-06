@@ -2,6 +2,9 @@ const Feedback = require('../models/Feedback');
 const ServiceRequest = require('../models/ServiceRequest');
 const Setting = require('../models/Setting');
 const Notification = require('../models/Notification');
+const Room = require('../models/Room');
+const Guest = require('../models/Guest');
+
 
 // ===================== FEEDBACK =====================
 exports.getAllFeedback = async (req, res) => {
@@ -45,7 +48,49 @@ exports.getAllServiceRequests = async (req, res) => {
 
 exports.createServiceRequest = async (req, res) => {
   try {
-    const request = await ServiceRequest.create(req.body);
+    let { room, guest, roomNumber, guestName, serviceType, details } = req.body;
+
+    // 1. Room number se Room ki MongoDB ID dhoondein
+    if (!room && roomNumber) {
+      const cleanNum = roomNumber.toString().replace(/[^0-9]/g, '');
+      const foundRoom = await Room.findOne({
+        $or: [
+          { roomNumber: roomNumber.toString().trim() },
+          { roomNumber: cleanNum }
+        ]
+      });
+      if (foundRoom) {
+        room = foundRoom._id;
+      } else {
+        return res.status(404).json({ 
+          success: false, 
+          message: `Suite #${roomNumber} not found. Please enter a valid room number.` 
+        });
+      }
+    }
+
+    // 2. Guest Name se Guest ki MongoDB ID dhoondein (ya create karein)
+    if (!guest && guestName) {
+      let foundGuest = await Guest.findOne({ fullName: new RegExp(`^${guestName.trim()}$`, 'i') });
+      if (!foundGuest) {
+       foundGuest = await Guest.create({
+          fullName: guestName.trim(),
+          email: `guest_${Date.now()}@luxurystay.com`,
+          phone: '+0000000000',
+          idNumber: `CONCIERGE-${Date.now().toString().slice(-6)}` // 👈 Yeh lazmi tha
+        });
+      }
+      guest = foundGuest._id;
+    }
+
+    // 3. Service Request create karein
+    const request = await ServiceRequest.create({
+      room,
+      guest,
+      serviceType: serviceType || 'Wake-up Call',
+      details: details || '',
+      status: 'Requested'
+    });
 
     // Auto notification for staff
     await Notification.create({
@@ -72,6 +117,17 @@ exports.updateServiceStatus = async (req, res) => {
       { new: true }
     );
     res.status(200).json({ success: true, request });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+exports.deleteServiceRequest = async (req, res) => {
+  try {
+    const request = await ServiceRequest.findByIdAndDelete(req.params.id);
+    if (!request) {
+      return res.status(404).json({ success: false, message: 'Request not found' });
+    }
+    res.status(200).json({ success: true, message: 'Request deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

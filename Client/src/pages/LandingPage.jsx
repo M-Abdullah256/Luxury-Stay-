@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import API from '../api/axios';
+import Swal from 'sweetalert2';
 import { 
   Sparkles, 
   ArrowRight, 
@@ -99,17 +100,33 @@ const LandingPage = () => {
     }
   };
 
+// Ab yeh karein:
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        setBookingModalOpen(false);
-        setRoomDetailModal(null);
-        setServiceModalOpen(false);
-        setFeedbackModalOpen(false);
+    const fetchRooms = async () => {
+      try {
+        const res = await API.get('/rooms');
+        const list = res.data.rooms || [];
+        setRooms(list);
+        setFilteredRooms(list);
+      } catch (err) {
+        console.error('Error loading rooms:', err);
+      } finally {
+        setLoading(false);
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    fetchRooms();
+
+    // 1. Har 6 second baad live status check karega
+    const interval = setInterval(fetchRooms, 6000);
+
+    // 2. Tab focus hote hi foran update karega
+    window.addEventListener('focus', fetchRooms);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', fetchRooms);
+    };
   }, []);
 
   useEffect(() => {
@@ -337,15 +354,51 @@ const LandingPage = () => {
         notes: bookingForm.specialRequests
       });
 
+      // Ab yeh karein:
       setBookingSuccess(resRes.data.reservation);
-    } catch (err) {
-      alert(err.response?.data?.message || 'Online booking failed.');
+
+      // 👇 Instant background update bina refresh ke
+      setRooms((prev) =>
+        prev.map((r) => (r._id === selectedRoom._id ? { ...r, status: 'Reserved' } : r))
+      );
+      setFilteredRooms((prev) =>
+        prev.map((r) => (r._id === selectedRoom._id ? { ...r, status: 'Reserved' } : r))
+      );
+  } catch (err) {
+      console.error('Booking Error:', err.response?.data || err.message);
+      
+      const errorText = err.response?.data?.message || 'Online reservation failed. Please verify all required fields.';
+
+      Swal.fire({
+        title: '<span style="font-family: \'Playfair Display\', serif; font-size: 22px; color: #fff;">Incomplete Reservation</span>',
+        html: `
+          <div style="background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.25); border-radius: 10px; padding: 14px; text-align: left; margin: 10px 0;">
+            <div style="color: #fb7185; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+              Validation Required
+            </div>
+            <p style="color: #cbd5e1; font-size: 13px; line-height: 1.6; margin: 0;">
+              ${errorText}
+            </p>
+          </div>
+          <p style="color: #94a3b8; font-size: 12px; margin: 6px 0 0 0;">
+            Please ensure Full Name, Phone Number, and CNIC/Passport are filled correctly.
+          </p>
+        `,
+        icon: 'warning',
+        iconColor: '#d4af37',
+        confirmButtonText: 'Correct Details',
+        buttonsStyling: false,
+        customClass: {
+          popup: 'luxury-swal-modal',
+          confirmButton: 'luxury-swal-gold-btn'
+        }
+      });
     } finally {
       setSubmittingBooking(false);
     }
   };
 
-  const handleServiceSubmit = async (e) => {
+const handleServiceSubmit = async (e) => {
     e.preventDefault();
     try {
       await API.post('/extras/services', {
@@ -354,12 +407,48 @@ const LandingPage = () => {
         serviceType: serviceForm.serviceType,
         details: serviceForm.details
       });
+
+      const currentRoom = serviceForm.roomNumber;
+      const currentService = serviceForm.serviceType;
+
       setServiceModalOpen(false);
       setServiceForm({ roomNumber: '', guestName: '', serviceType: 'Wake-up Call', details: '' });
-      alert('Your concierge request has been relayed to the private butler team.');
+
+      // Luxury SweetAlert Success
+      Swal.fire({
+        title: '<span style="font-family: \'Playfair Display\', serif; font-size: 22px; color: #fff;">Concierge Dispatched!</span>',
+        html: `
+          <p style="color: #94a3b8; font-size: 13.5px; margin-top: 4px; line-height: 1.6;">
+            Your request for <strong style="color: #d4af37;">${currentService}</strong> for 
+            <span style="white-space: nowrap; display: inline-block; color: #d4af37; font-family: monospace; font-weight: 700; background: rgba(212,175,55,0.1); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(212,175,55,0.25);">Suite #${currentRoom}</span> 
+            has been relayed to the private butler desk.
+          </p>
+        `,
+        icon: 'success',
+        iconColor: '#10b981',
+        confirmButtonText: 'Done',
+        buttonsStyling: false,
+        customClass: {
+          popup: 'luxury-swal-modal',
+          confirmButton: 'luxury-swal-gold-btn'
+        }
+      });
     } catch (err) {
-      alert('Service request submitted to concierge team.');
-      setServiceModalOpen(false);
+      console.error('Concierge Error:', err.response?.data || err.message);
+
+      // Luxury SweetAlert Error
+      Swal.fire({
+        title: '<span style="font-family: \'Playfair Display\', serif; font-size: 20px; color: #fff;">Request Failed</span>',
+        text: err.response?.data?.message || 'Failed to send request. Please verify your suite number.',
+        icon: 'error',
+        iconColor: '#f43f5e',
+        confirmButtonText: 'Dismiss',
+        buttonsStyling: false,
+        customClass: {
+          popup: 'luxury-swal-modal',
+          confirmButton: 'luxury-swal-cancel-btn'
+        }
+      });
     }
   };
 
@@ -409,6 +498,7 @@ const LandingPage = () => {
       customImg: '/Images/showcase-bar.jpg'
     }
   ];
+const activeSuites = rooms.filter((r) => r.status === 'Reserved' || r.status === 'Occupied');
 
   return (
     <div style={{ 
@@ -1710,16 +1800,27 @@ const LandingPage = () => {
                 />
               </div>
 
-              <div>
-                <label style={fieldLabelStyle}>Suite / Room Number *</label>
-                <input
-                  type="text"
+            <div>
+                <label style={fieldLabelStyle}>Select Your Reserved Suite *</label>
+                <select
                   required
-                  placeholder="e.g. 101 or Presidential Suite"
                   value={serviceForm.roomNumber}
                   onChange={(e) => setServiceForm({ ...serviceForm, roomNumber: e.target.value })}
                   style={fieldInputStyle}
-                />
+                >
+                  <option value="">-- Choose Your Suite --</option>
+                  {activeSuites.length === 0 ? (
+                    <option disabled value="" style={{ background: '#0d1527', color: '#94a3b8' }}>
+                      No active reserved suites available
+                    </option>
+                  ) : (
+                    activeSuites.map((r) => (
+                      <option key={r._id} value={r.roomNumber} style={{ background: '#0d1527', color: '#ffffff' }}>
+                        Suite #{r.roomNumber} — {r.roomType} ({r.status})
+                      </option>
+                    ))
+                  )}
+                </select>
               </div>
 
               <div>
@@ -1849,7 +1950,41 @@ const LandingPage = () => {
           </div>
         </div>
       )}
-
+{/* Luxury SweetAlert Styling */}
+      <style>{`
+      /* SweetAlert ko modal ke upar lane ke liye */
+        .swal2-container {
+          z-index: 99999 !important;
+        }
+        .luxury-swal-modal {
+          background: rgba(13, 21, 39, 0.98) !important;
+          border: 1px solid rgba(212, 175, 55, 0.35) !important;
+          border-radius: 20px !important;
+          padding: 26px 20px !important;
+          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9) !important;
+          backdrop-filter: blur(12px) !important;
+        }
+        .luxury-swal-gold-btn {
+          background: linear-gradient(135deg, #d4af37 0%, #aa7c11 100%) !important;
+          color: #070b14 !important;
+          font-weight: 700 !important;
+          font-size: 12px !important;
+          padding: 10px 26px !important;
+          border-radius: 10px !important;
+          border: none !important;
+          cursor: pointer !important;
+        }
+        .luxury-swal-cancel-btn {
+          background: rgba(255, 255, 255, 0.06) !important;
+          border: 1px solid rgba(255, 255, 255, 0.15) !important;
+          color: #cbd5e1 !important;
+          font-size: 12px !important;
+          font-weight: 600 !important;
+          padding: 10px 20px !important;
+          border-radius: 10px !important;
+          cursor: pointer !important;
+        }
+      `}</style>
     </div>
   );
 };

@@ -215,3 +215,29 @@ exports.lookupReservation = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+// @desc    Delete reservation & release room back to Available
+// @route   DELETE /api/reservations/:id
+// @access  Private (Staff only)
+exports.deleteReservation = async (req, res) => {
+  try {
+    const reservation = await Reservation.findById(req.params.id);
+
+    if (!reservation) {
+      return res.status(404).json({ success: false, message: 'Reservation not found' });
+    }
+
+    // Agar reservation abhi Confirmed/Reserved thi, to room ko wapis Available kar dein
+    if (reservation.room && reservation.status === 'Confirmed') {
+      await Room.findByIdAndUpdate(reservation.room, { status: 'Available' });
+    }
+
+    await Reservation.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Reservation deleted successfully and room freed'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

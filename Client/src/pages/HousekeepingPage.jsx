@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import API from '../api/axios';
+import Swal from 'sweetalert2';
+import { useAuth } from '../context/AuthContext'; 
 import { 
   Sparkles, 
   Plus, 
@@ -9,12 +11,14 @@ import {
   X,
   Brush,
   Clock,
+  Trash2,
   ShieldCheck,
   Check,
   Layers
 } from 'lucide-react';
 
 const HousekeepingPage = () => {
+   const { user } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,25 +53,119 @@ const HousekeepingPage = () => {
     fetchData();
   }, []);
 
-  // AUTOMATED 1-CLICK CLEAN: Releases Room to Available AND Records in History Log!
+// AUTOMATED 1-CLICK CLEAN: Luxury SweetAlert
   const handleQuickCleanRoom = async (roomId, roomNumber) => {
-    if (!window.confirm(`Sanitize Suite #${roomNumber} and release back to Available inventory?`)) return;
-    try {
-      await API.patch(`/operations/housekeeping/quick-clean/${roomId}`);
-      fetchData();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Failed to update room');
+    const result = await Swal.fire({
+      title: '<span style="font-family: \'Playfair Display\', serif; font-size: 22px; color: #fff;">Sanitize & Release Suite?</span>',
+      html: `
+        <p style="color: #94a3b8; font-size: 13.5px; margin-top: 4px; line-height: 1.6;">
+          Are you ready to mark 
+          <span style="white-space: nowrap; display: inline-block; color: #d4af37; font-family: monospace; font-weight: 700; background: rgba(212,175,55,0.1); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(212,175,55,0.25);">Suite #${roomNumber}</span> 
+          as sanitized and release it back to active inventory?
+        </p>
+      `,
+      icon: 'question',
+      iconColor: '#d4af37',
+      showCancelButton: true,
+      confirmButtonText: 'Sanitize & Release',
+      cancelButtonText: 'Cancel',
+      buttonsStyling: false,
+      customClass: {
+        popup: 'luxury-swal-modal',
+        confirmButton: 'luxury-swal-gold-btn',
+        cancelButton: 'luxury-swal-cancel-btn'
+      }
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await API.patch(`/operations/housekeeping/quick-clean/${roomId}`);
+        fetchData();
+
+        Swal.fire({
+          title: '<span style="font-family: \'Playfair Display\', serif; font-size: 20px; color: #fff;">Suite Sanitized!</span>',
+          html: `<p style="color: #94a3b8; font-size: 13px;">Suite #${roomNumber} is now marked <strong>Available</strong> in inventory.</p>`,
+          icon: 'success',
+          iconColor: '#10b981',
+          confirmButtonText: 'Great',
+          buttonsStyling: false,
+          customClass: {
+            popup: 'luxury-swal-modal',
+            confirmButton: 'luxury-swal-gold-btn'
+          }
+        });
+      } catch (err) {
+        Swal.fire({
+          title: '<span style="font-family: \'Playfair Display\', serif; font-size: 20px; color: #fff;">Update Failed</span>',
+          text: err.response?.data?.message || 'Failed to update room',
+          icon: 'error',
+          iconColor: '#f43f5e',
+          confirmButtonText: 'Dismiss',
+          buttonsStyling: false,
+          customClass: {
+            popup: 'luxury-swal-modal',
+            confirmButton: 'luxury-swal-cancel-btn'
+          }
+        });
+      }
     }
   };
 
-  // Complete Scheduled Task
+  // Complete Scheduled Task: Luxury SweetAlert
   const handleCompleteTask = async (taskId, roomNumber) => {
-    if (!window.confirm(`Mark cleaning completed for Suite #${roomNumber}? Room will automatically become Available.`)) return;
-    try {
-      await API.patch(`/operations/housekeeping/${taskId}/complete`);
-      fetchData();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Failed to complete task');
+    const result = await Swal.fire({
+      title: '<span style="font-family: \'Playfair Display\', serif; font-size: 22px; color: #fff;">Complete Cleaning Task?</span>',
+      html: `
+        <p style="color: #94a3b8; font-size: 13.5px; margin-top: 4px; line-height: 1.6;">
+          Confirm completion of cleaning for 
+          <span style="white-space: nowrap; display: inline-block; color: #d4af37; font-family: monospace; font-weight: 700; background: rgba(212,175,55,0.1); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(212,175,55,0.25);">Suite #${roomNumber}</span>? 
+          The room will automatically become Available.
+        </p>
+      `,
+      icon: 'question',
+      iconColor: '#d4af37',
+      showCancelButton: true,
+      confirmButtonText: 'Mark Completed',
+      cancelButtonText: 'Cancel',
+      buttonsStyling: false,
+      customClass: {
+        popup: 'luxury-swal-modal',
+        confirmButton: 'luxury-swal-gold-btn',
+        cancelButton: 'luxury-swal-cancel-btn'
+      }
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await API.patch(`/operations/housekeeping/${taskId}/complete`);
+        fetchData();
+
+        Swal.fire({
+          title: '<span style="font-family: \'Playfair Display\', serif; font-size: 20px; color: #fff;">Task Completed</span>',
+          html: `<p style="color: #94a3b8; font-size: 13px;">Suite #${roomNumber} has been cleaned and released to inventory.</p>`,
+          icon: 'success',
+          iconColor: '#10b981',
+          confirmButtonText: 'Done',
+          buttonsStyling: false,
+          customClass: {
+            popup: 'luxury-swal-modal',
+            confirmButton: 'luxury-swal-gold-btn'
+          }
+        });
+      } catch (err) {
+        Swal.fire({
+          title: '<span style="font-family: \'Playfair Display\', serif; font-size: 20px; color: #fff;">Error</span>',
+          text: err.response?.data?.message || 'Failed to complete task',
+          icon: 'error',
+          iconColor: '#f43f5e',
+          confirmButtonText: 'Dismiss',
+          buttonsStyling: false,
+          customClass: {
+            popup: 'luxury-swal-modal',
+            confirmButton: 'luxury-swal-cancel-btn'
+          }
+        });
+      }
     }
   };
 
@@ -84,6 +182,63 @@ const HousekeepingPage = () => {
       alert(err.response?.data?.message || 'Failed to schedule task');
     } finally {
       setSubmitting(false);
+    }
+  };
+  // Delete Housekeeping Task with Luxury SweetAlert2
+  const handleDeleteTask = async (taskId, roomNumber) => {
+    const result = await Swal.fire({
+      title: '<span style="font-family: \'Playfair Display\', serif; font-size: 22px; color: #fff;">Delete Task Record?</span>',
+      html: `
+        <p style="color: #94a3b8; font-size: 13.5px; margin-top: 4px; line-height: 1.6;">
+          Are you sure you want to remove the cleaning task for 
+          <span style="white-space: nowrap; display: inline-block; color: #d4af37; font-family: monospace; font-weight: 700; background: rgba(212,175,55,0.1); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(212,175,55,0.25);">Suite #${roomNumber || 'N/A'}</span>
+          from the ledger?
+        </p>
+      `,
+      icon: 'warning',
+      iconColor: '#d4af37',
+      showCancelButton: true,
+      confirmButtonText: 'Delete Record',
+      cancelButtonText: 'Cancel',
+      buttonsStyling: false,
+      customClass: {
+        popup: 'luxury-swal-modal',
+        confirmButton: 'luxury-swal-confirm-btn',
+        cancelButton: 'luxury-swal-cancel-btn'
+      }
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await API.delete(`/operations/housekeeping/${taskId}`);
+        setTasks((prev) => prev.filter((t) => t._id !== taskId));
+
+        Swal.fire({
+          title: '<span style="font-family: \'Playfair Display\', serif; font-size: 20px; color: #fff;">Record Deleted</span>',
+          html: `<p style="color: #94a3b8; font-size: 13px;">Task for Suite #${roomNumber} has been removed.</p>`,
+          icon: 'success',
+          iconColor: '#10b981',
+          confirmButtonText: 'Done',
+          buttonsStyling: false,
+          customClass: {
+            popup: 'luxury-swal-modal',
+            confirmButton: 'luxury-swal-gold-btn'
+          }
+        });
+      } catch (err) {
+        Swal.fire({
+          title: '<span style="font-family: \'Playfair Display\', serif; font-size: 20px; color: #fff;">Error</span>',
+          text: err.response?.data?.message || 'Failed to delete task',
+          icon: 'error',
+          iconColor: '#f43f5e',
+          confirmButtonText: 'Dismiss',
+          buttonsStyling: false,
+          customClass: {
+            popup: 'luxury-swal-modal',
+            confirmButton: 'luxury-swal-cancel-btn'
+          }
+        });
+      }
     }
   };
 
@@ -422,32 +577,57 @@ const HousekeepingPage = () => {
                         {new Date(task.updatedAt || task.createdAt).toLocaleDateString()}
                       </td>
 
-                      {/* Action */}
+                    {/* Action */}
                       <td style={{ ...tdStyle, textAlign: 'center' }}>
-                        {!isCompleted ? (
-                          <button
-                            onClick={() => handleCompleteTask(task._id, task.room?.roomNumber)}
-                            style={{
-                              background: 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)',
-                              color: '#070b14',
-                              fontWeight: '700',
-                              fontSize: '11.5px',
-                              padding: '6px 14px',
-                              borderRadius: '7px',
-                              border: 'none',
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '5px'
-                            }}
-                          >
-                            <CheckCircle2 size={13} /> Complete
-                          </button>
-                        ) : (
-                          <span style={{ color: '#10b981', fontSize: '12px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <Check size={14} strokeWidth={2.5} /> Cleaned
-                          </span>
-                        )}
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
+                          {!isCompleted ? (
+                            <button
+                              onClick={() => handleCompleteTask(task._id, task.room?.roomNumber)}
+                              style={{
+                                background: 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)',
+                                color: '#070b14',
+                                fontWeight: '700',
+                                fontSize: '11.5px',
+                                padding: '6px 14px',
+                                borderRadius: '7px',
+                                border: 'none',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px'
+                              }}
+                            >
+                              <CheckCircle2 size={13} /> Complete
+                            </button>
+                          ) : (
+                            <span style={{ color: '#10b981', fontSize: '12px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <Check size={14} strokeWidth={2.5} /> Cleaned
+                            </span>
+                          )}
+
+                        {/* Delete Task Button (Sirf Admin ko dikhega) */}
+{user?.role === 'admin' && isCompleted && (
+  <button
+    onClick={() => handleDeleteTask(task._id, task.room?.roomNumber)}
+    style={{
+      background: 'rgba(244, 63, 94, 0.08)',
+      border: '1px solid rgba(244, 63, 94, 0.25)',
+      color: '#fb7185',
+      padding: '6px 9px',
+      borderRadius: '7px',
+      cursor: 'pointer',
+      display: 'inline-flex',
+      alignItems: 'center',
+      transition: 'all 0.15s ease'
+    }}
+    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(244, 63, 94, 0.2)'}
+    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(244, 63, 94, 0.08)'}
+    title="Delete Task Record"
+  >
+    <Trash2 size={13} />
+  </button>
+)}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -539,7 +719,52 @@ const HousekeepingPage = () => {
           </div>
         </div>
       )}
-
+{/* Luxury SweetAlert Styling */}
+      <style>{`
+        .luxury-swal-modal {
+          background: rgba(13, 21, 39, 0.98) !important;
+          border: 1px solid rgba(212, 175, 55, 0.35) !important;
+          border-radius: 20px !important;
+          padding: 26px 20px !important;
+          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9) !important;
+          backdrop-filter: blur(12px) !important;
+        }
+        .luxury-swal-confirm-btn {
+          background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%) !important;
+          color: #ffffff !important;
+          font-weight: 700 !important;
+          font-size: 12px !important;
+          text-transform: uppercase !important;
+          letter-spacing: 0.5px !important;
+          padding: 10px 22px !important;
+          border-radius: 10px !important;
+          border: none !important;
+          cursor: pointer !important;
+          margin: 0 6px !important;
+          box-shadow: 0 4px 14px rgba(244, 63, 94, 0.35) !important;
+        }
+        .luxury-swal-cancel-btn {
+          background: rgba(255, 255, 255, 0.06) !important;
+          border: 1px solid rgba(255, 255, 255, 0.15) !important;
+          color: #cbd5e1 !important;
+          font-size: 12px !important;
+          font-weight: 600 !important;
+          padding: 10px 20px !important;
+          border-radius: 10px !important;
+          cursor: pointer !important;
+          margin: 0 6px !important;
+        }
+        .luxury-swal-gold-btn {
+          background: linear-gradient(135deg, #d4af37 0%, #aa7c11 100%) !important;
+          color: #070b14 !important;
+          font-weight: 700 !important;
+          font-size: 12px !important;
+          padding: 10px 24px !important;
+          border-radius: 10px !important;
+          border: none !important;
+          cursor: pointer !important;
+        }
+      `}</style>
     </div>
   );
 };

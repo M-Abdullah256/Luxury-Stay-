@@ -156,3 +156,26 @@ exports.resolveMaintenanceIssue = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+exports.deleteHousekeepingTask = async (req, res) => {
+  try {
+    // 👇 Yeh check add karein (Sirf Admin allow hoga)
+    if (req.user && req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access Denied: Only Admin can delete housekeeping tasks' 
+      });
+    }
+
+    const task = await HousekeepingTask.findByIdAndDelete(req.params.id);
+    if (!task) {
+      return res.status(404).json({ success: false, message: 'Task record not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Housekeeping task deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

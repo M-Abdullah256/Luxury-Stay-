@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import API from '../api/axios';
+import { useAuth } from '../context/AuthContext'; 
+import Swal from 'sweetalert2';
 import { 
   Receipt, 
   Plus, 
@@ -7,6 +9,7 @@ import {
   Printer, 
   CreditCard, 
   DollarSign, 
+  Trash2,
   CheckCircle, 
   Coffee, 
   Shirt, 
@@ -22,6 +25,7 @@ import {
 } from 'lucide-react';
 
 const BillingInvoices = () => {
+  const { user } = useAuth();
   const [bills, setBills] = useState([]);
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -93,16 +97,127 @@ const BillingInvoices = () => {
     }
   };
 
-  // Mark as Paid
-  const handlePayBill = async (billId) => {
-    const paymentMethod = window.prompt('Select Payment Settlement Method: "Credit Card", "Cash", or "Online Wire"', 'Credit Card');
-    if (!paymentMethod) return;
+// Mark as Paid with Luxury SweetAlert
+  const handlePayBill = async (billId, invoiceNumber = '', totalAmount = 0) => {
+    const { value: paymentMethod } = await Swal.fire({
+      title: '<span style="font-family: \'Playfair Display\', serif; font-size: 22px; color: #fff;">Settle Folio Payment</span>',
+      html: `
+        <p style="color: #94a3b8; font-size: 13px; margin: 4px 0 16px 0; line-height: 1.6;">
+          Settling folio 
+          <span style="white-space: nowrap; display: inline-block; color: #d4af37; font-family: monospace; font-weight: 700; background: rgba(212,175,55,0.1); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(212,175,55,0.25);">${invoiceNumber ? '#' + invoiceNumber : 'Invoice'}</span>
+          ${totalAmount ? `• Grand Total: <strong style="color: #ffffff;">$${totalAmount.toFixed(2)}</strong>` : ''}
+        </p>
+        <div style="text-align: left; font-size: 11.5px; color: #cbd5e1; margin-bottom: 6px; font-weight: 600;">
+          Select Payment Gateway Method:
+        </div>
+      `,
+      input: 'select',
+      inputOptions: {
+        'Credit Card': '💳 Credit Card (Visa / Mastercard / Amex)',
+        'Cash': '💵 Cash Settlement (Front Desk)',
+        
+      },
+      inputValue: 'Credit Card',
+      showCancelButton: true,
+      confirmButtonText: 'Settle & Finalize',
+      cancelButtonText: 'Cancel',
+      buttonsStyling: false,
+      customClass: {
+        popup: 'luxury-swal-modal',
+        confirmButton: 'luxury-swal-gold-btn',
+        cancelButton: 'luxury-swal-cancel-btn',
+        input: 'luxury-swal-select'
+      }
+    });
 
-    try {
-      await API.patch(`/billing/${billId}/pay`, { paymentMethod });
-      fetchData();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Payment processing failed');
+    if (paymentMethod) {
+      try {
+        await API.patch(`/billing/${billId}/pay`, { paymentMethod });
+        fetchData();
+
+        Swal.fire({
+          title: '<span style="font-family: \'Playfair Display\', serif; font-size: 20px; color: #fff;">Settlement Complete!</span>',
+          html: `<p style="color: #94a3b8; font-size: 13px;">Payment settled successfully via <strong>${paymentMethod}</strong>. Folio is now Paid.</p>`,
+          icon: 'success',
+          iconColor: '#10b981',
+          confirmButtonText: 'Done',
+          buttonsStyling: false,
+          customClass: {
+            popup: 'luxury-swal-modal',
+            confirmButton: 'luxury-swal-gold-btn'
+          }
+        });
+      } catch (err) {
+        Swal.fire({
+          title: '<span style="font-family: \'Playfair Display\', serif; font-size: 20px; color: #fff;">Payment Failed</span>',
+          text: err.response?.data?.message || 'Payment processing failed',
+          icon: 'error',
+          iconColor: '#f43f5e',
+          confirmButtonText: 'Dismiss',
+          buttonsStyling: false,
+          customClass: {
+            popup: 'luxury-swal-modal',
+            confirmButton: 'luxury-swal-cancel-btn'
+          }
+        });
+      }
+    }
+  };
+// Luxury 5-Star Styled SweetAlert
+  const handleDeleteBill = async (billId, invoiceNumber) => {
+    const result = await Swal.fire({
+      title: '<span style="font-family: \'Playfair Display\', serif; font-size: 22px; color: #fff;">Purge Folio Invoice?</span>',
+     html: `
+        <p style="color: #94a3b8; font-size: 13.5px; margin-top: 4px; line-height: 1.6;">
+          Are you sure you want to permanently delete folio 
+          <span style="white-space: nowrap; display: inline-block; color: #d4af37; font-family: monospace; font-weight: 700; background: rgba(212,175,55,0.1); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(212,175,55,0.25);">#${invoiceNumber}</span>
+          from the central ledger? This action cannot be reversed.
+        </p>
+      `,
+      icon: 'warning',
+      iconColor: '#d4af37',
+      showCancelButton: true,
+      confirmButtonText: 'Delete Folio',
+      cancelButtonText: 'Keep Invoice',
+      buttonsStyling: false,
+      customClass: {
+        popup: 'luxury-swal-modal',
+        confirmButton: 'luxury-swal-confirm-btn',
+        cancelButton: 'luxury-swal-cancel-btn'
+      }
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await API.delete(`/billing/${billId}`);
+        setBills((prev) => prev.filter((b) => b._id !== billId));
+
+        Swal.fire({
+          title: '<span style="font-family: \'Playfair Display\', serif; font-size: 20px; color: #fff;">Invoice Removed</span>',
+          html: `<p style="color: #94a3b8; font-size: 13px;">Folio #${invoiceNumber} has been successfully deleted.</p>`,
+          icon: 'success',
+          iconColor: '#10b981',
+          confirmButtonText: 'Done',
+          buttonsStyling: false,
+          customClass: {
+            popup: 'luxury-swal-modal',
+            confirmButton: 'luxury-swal-gold-btn'
+          }
+        });
+      } catch (err) {
+        Swal.fire({
+          title: '<span style="font-family: \'Playfair Display\', serif; font-size: 20px; color: #fff;">Deletion Error</span>',
+          text: err.response?.data?.message || 'Failed to remove invoice',
+          icon: 'error',
+          iconColor: '#f43f5e',
+          confirmButtonText: 'Dismiss',
+          buttonsStyling: false,
+          customClass: {
+            popup: 'luxury-swal-modal',
+            confirmButton: 'luxury-swal-cancel-btn'
+          }
+        });
+      }
     }
   };
 
@@ -484,8 +599,7 @@ const BillingInvoices = () => {
 
                           {/* Pay Bill Button */}
                           {!isPaid && (
-                            <button
-                              onClick={() => handlePayBill(bill._id)}
+                           <button onClick={() => handlePayBill(bill._id, bill.invoiceNumber, bill.totalAmount)}
                               style={{
                                 background: 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)',
                                 color: '#070b14',
@@ -526,7 +640,29 @@ const BillingInvoices = () => {
                           >
                             <Printer size={12} color="#d4af37" /> Folio
                           </button>
-
+{/* Delete Invoice Button (Only for Admin) */}
+{(!user || user?.role === 'admin') && (
+  <button
+    onClick={() => handleDeleteBill(bill._id, bill.invoiceNumber)}
+    style={{
+      background: 'rgba(244, 63, 94, 0.08)',
+      border: '1px solid rgba(244, 63, 94, 0.25)',
+      color: '#fb7185',
+      padding: '6px 9px',
+      borderRadius: '7px',
+      cursor: 'pointer',
+      fontSize: '11px',
+      display: 'inline-flex',
+      alignItems: 'center',
+      transition: 'all 0.15s ease'
+    }}
+    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(244, 63, 94, 0.2)'}
+    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(244, 63, 94, 0.08)'}
+    title="Delete Folio Invoice"
+  >
+    <Trash2 size={13} />
+  </button>
+)}
                         </div>
                       </td>
                     </tr>
@@ -879,6 +1015,69 @@ const BillingInvoices = () => {
           .no-print {
             display: none !important;
           }
+        }
+          /* Luxury SweetAlert2 Modal Styling */
+        .luxury-swal-modal {
+          background: rgba(13, 21, 39, 0.98) !important;
+          border: 1px solid rgba(212, 175, 55, 0.35) !important;
+          border-radius: 20px !important;
+          padding: 26px 20px !important;
+          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9) !important;
+          backdrop-filter: blur(12px) !important;
+        }
+
+        .luxury-swal-confirm-btn {
+          background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%) !important;
+          color: #ffffff !important;
+          font-weight: 700 !important;
+          font-size: 12px !important;
+          text-transform: uppercase !important;
+          letter-spacing: 0.5px !important;
+          padding: 10px 22px !important;
+          border-radius: 10px !important;
+          border: none !important;
+          cursor: pointer !important;
+          margin: 0 6px !important;
+          box-shadow: 0 4px 14px rgba(244, 63, 94, 0.35) !important;
+          transition: transform 0.15s ease !important;
+        }
+        .luxury-swal-confirm-btn:hover {
+          transform: translateY(-1px) !important;
+        }
+
+        .luxury-swal-cancel-btn {
+          background: rgba(255, 255, 255, 0.06) !important;
+          border: 1px solid rgba(255, 255, 255, 0.15) !important;
+          color: #cbd5e1 !important;
+          font-size: 12px !important;
+          font-weight: 600 !important;
+          padding: 10px 20px !important;
+          border-radius: 10px !important;
+          cursor: pointer !important;
+          margin: 0 6px !important;
+        }
+
+        .luxury-swal-gold-btn {
+          background: linear-gradient(135deg, #d4af37 0%, #aa7c11 100%) !important;
+          color: #070b14 !important;
+          font-weight: 700 !important;
+          font-size: 12px !important;
+          padding: 10px 24px !important;
+          border-radius: 10px !important;
+          border: none !important;
+          cursor: pointer !important;
+        }
+          .luxury-swal-select {
+          background: #070b14 !important;
+          color: #ffffff !important;
+          border: 1px solid rgba(212, 175, 55, 0.35) !important;
+          border-radius: 10px !important;
+          padding: 10px 14px !important;
+          font-size: 13px !important;
+          outline: none !important;
+          margin: 0 auto 10px auto !important;
+          width: 88% !important;
+          box-sizing: border-box !important;
         }
       `}</style>
 

@@ -102,3 +102,19 @@ exports.getAllBills = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+// @desc    Delete a bill / invoice
+// @route   DELETE /api/billing/:billId
+// @access  Private (Admin)
+exports.deleteBill = async (req, res) => {
+  try {
+    const bill = await Bill.findByIdAndDelete(req.params.billId);
+
+    if (!bill) {
+      return res.status(404).json({ success: false, message: 'Invoice folio not found' });
+    }
+
+    res.status(200).json({ success: true, message: 'Invoice folio deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

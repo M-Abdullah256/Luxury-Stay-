@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import API from '../api/axios';
+import Swal from 'sweetalert2';
 import { 
   CalendarCheck, 
   Plus, 
   Search, 
   Key, 
   LogOut, 
+  Trash2, 
   X, 
   CheckCircle2,
   Sparkles,
@@ -83,28 +85,178 @@ useEffect(() => {
   };
 }, []);
 
-  // Automated Check-In
+// Automated Check-In with Luxury SweetAlert
   const handleCheckIn = async (reservationId, roomNumber) => {
-    if (!window.confirm(`Issue room key card and Check-In guest for Suite #${roomNumber}?`)) return;
-    try {
-      await API.patch(`/reservations/${reservationId}/check-in`);
-      fetchData();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Check-in failed');
+    const result = await Swal.fire({
+      title: '<span style="font-family: \'Playfair Display\', serif; font-size: 22px; color: #fff;">Issue Key & Check-In?</span>',
+      html: `
+        <p style="color: #94a3b8; font-size: 13.5px; margin-top: 4px; line-height: 1.6;">
+          Issue digital room key card and complete official Check-In for 
+          <span style="white-space: nowrap; display: inline-block; color: #d4af37; font-family: monospace; font-weight: 700; background: rgba(212,175,55,0.1); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(212,175,55,0.25);">Suite #${roomNumber}</span>? 
+          Room status will be set to <strong>Occupied</strong>.
+        </p>
+      `,
+      icon: 'question',
+      iconColor: '#d4af37',
+      showCancelButton: true,
+      confirmButtonText: 'Issue Key & Check-In',
+      cancelButtonText: 'Cancel',
+      buttonsStyling: false,
+      customClass: {
+        popup: 'luxury-swal-modal',
+        confirmButton: 'luxury-swal-gold-btn',
+        cancelButton: 'luxury-swal-cancel-btn'
+      }
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await API.patch(`/reservations/${reservationId}/check-in`);
+        fetchData();
+
+        Swal.fire({
+          title: '<span style="font-family: \'Playfair Display\', serif; font-size: 20px; color: #fff;">Check-In Complete</span>',
+          html: `<p style="color: #94a3b8; font-size: 13px;">Guest checked in to Suite #${roomNumber}. Room is now Occupied.</p>`,
+          icon: 'success',
+          iconColor: '#10b981',
+          confirmButtonText: 'Great',
+          buttonsStyling: false,
+          customClass: {
+            popup: 'luxury-swal-modal',
+            confirmButton: 'luxury-swal-gold-btn'
+          }
+        });
+      } catch (err) {
+        Swal.fire({
+          title: '<span style="font-family: \'Playfair Display\', serif; font-size: 20px; color: #fff;">Check-In Failed</span>',
+          text: err.response?.data?.message || 'Check-in failed',
+          icon: 'error',
+          iconColor: '#f43f5e',
+          confirmButtonText: 'Dismiss',
+          buttonsStyling: false,
+          customClass: {
+            popup: 'luxury-swal-modal',
+            confirmButton: 'luxury-swal-cancel-btn'
+          }
+        });
+      }
     }
   };
 
-  // Automated Check-Out
+ // Automated Check-Out with Luxury SweetAlert
   const handleCheckOut = async (reservationId, roomNumber) => {
-    if (!window.confirm(`Finalize stay and Check-Out Suite #${roomNumber}? Room will be automatically transferred to Housekeeping.`)) return;
-    try {
-      await API.patch(`/reservations/${reservationId}/check-out`);
-      fetchData();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Check-out failed');
+    const result = await Swal.fire({
+      title: '<span style="font-family: \'Playfair Display\', serif; font-size: 22px; color: #fff;">Finalize Stay & Check-Out?</span>',
+      html: `
+        <p style="color: #94a3b8; font-size: 13.5px; margin-top: 4px; line-height: 1.6;">
+          Finalize stay and complete departure for 
+          <span style="white-space: nowrap; display: inline-block; color: #d4af37; font-family: monospace; font-weight: 700; background: rgba(212,175,55,0.1); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(212,175,55,0.25);">Suite #${roomNumber}</span>? 
+          The room will be automatically transferred to the <strong>Housekeeping Cleaning Queue</strong>.
+        </p>
+      `,
+      icon: 'question',
+      iconColor: '#d4af37',
+      showCancelButton: true,
+      confirmButtonText: 'Confirm Check-Out',
+      cancelButtonText: 'Cancel',
+      buttonsStyling: false,
+      customClass: {
+        popup: 'luxury-swal-modal',
+        confirmButton: 'luxury-swal-gold-btn',
+        cancelButton: 'luxury-swal-cancel-btn'
+      }
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await API.patch(`/reservations/${reservationId}/check-out`);
+        fetchData();
+
+        Swal.fire({
+          title: '<span style="font-family: \'Playfair Display\', serif; font-size: 20px; color: #fff;">Check-Out Completed</span>',
+          html: `<p style="color: #94a3b8; font-size: 13px;">Suite #${roomNumber} has been checked out and sent to Housekeeping for cleaning.</p>`,
+          icon: 'success',
+          iconColor: '#10b981',
+          confirmButtonText: 'Done',
+          buttonsStyling: false,
+          customClass: {
+            popup: 'luxury-swal-modal',
+            confirmButton: 'luxury-swal-gold-btn'
+          }
+        });
+      } catch (err) {
+        Swal.fire({
+          title: '<span style="font-family: \'Playfair Display\', serif; font-size: 20px; color: #fff;">Check-Out Failed</span>',
+          text: err.response?.data?.message || 'Check-out failed',
+          icon: 'error',
+          iconColor: '#f43f5e',
+          confirmButtonText: 'Dismiss',
+          buttonsStyling: false,
+          customClass: {
+            popup: 'luxury-swal-modal',
+            confirmButton: 'luxury-swal-cancel-btn'
+          }
+        });
+      }
     }
   };
+// Delete Reservation with Luxury SweetAlert2
+  const handleDeleteReservation = async (reservationId, bookingReference) => {
+    const result = await Swal.fire({
+      title: '<span style="font-family: \'Playfair Display\', serif; font-size: 22px; color: #fff;">Purge Reservation?</span>',
+      html: `
+        <p style="color: #94a3b8; font-size: 13.5px; margin-top: 4px; line-height: 1.6;">
+          Are you sure you want to delete reservation record 
+          <span style="white-space: nowrap; display: inline-block; color: #d4af37; font-family: monospace; font-weight: 700; background: rgba(212,175,55,0.1); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(212,175,55,0.25);">${bookingReference}</span>?
+          This will permanently remove it from the ledger.
+        </p>
+      `,
+      icon: 'warning',
+      iconColor: '#d4af37',
+      showCancelButton: true,
+      confirmButtonText: 'Delete Record',
+      cancelButtonText: 'Cancel',
+      buttonsStyling: false,
+      customClass: {
+        popup: 'luxury-swal-modal',
+        confirmButton: 'luxury-swal-confirm-btn',
+        cancelButton: 'luxury-swal-cancel-btn'
+      }
+    });
 
+    if (result.isConfirmed) {
+      try {
+        await API.delete(`/reservations/${reservationId}`);
+        setReservations((prev) => prev.filter((r) => r._id !== reservationId));
+
+        Swal.fire({
+          title: '<span style="font-family: \'Playfair Display\', serif; font-size: 20px; color: #fff;">Reservation Removed</span>',
+          html: `<p style="color: #94a3b8; font-size: 13px;">Booking ${bookingReference} has been deleted.</p>`,
+          icon: 'success',
+          iconColor: '#10b981',
+          confirmButtonText: 'Done',
+          buttonsStyling: false,
+          customClass: {
+            popup: 'luxury-swal-modal',
+            confirmButton: 'luxury-swal-gold-btn'
+          }
+        });
+      } catch (err) {
+        Swal.fire({
+          title: '<span style="font-family: \'Playfair Display\', serif; font-size: 20px; color: #fff;">Error</span>',
+          text: err.response?.data?.message || 'Failed to delete reservation',
+          icon: 'error',
+          iconColor: '#f43f5e',
+          confirmButtonText: 'Dismiss',
+          buttonsStyling: false,
+          customClass: {
+            popup: 'luxury-swal-modal',
+            confirmButton: 'luxury-swal-cancel-btn'
+          }
+        });
+      }
+    }
+  };
   // Create Reservation Handler
   const handleCreateReservation = async (e) => {
     e.preventDefault();
@@ -388,59 +540,79 @@ useEffect(() => {
                         </span>
                       </td>
 
-                      {/* Actions */}
+                    {/* Actions */}
                       <td style={{ ...tdStyle, textAlign: 'center' }}>
-                        {res.status === 'Confirmed' && (
-                          <button
-                            onClick={() => handleCheckIn(res._id, res.room?.roomNumber)}
-                            style={{
-                              background: 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)',
-                              color: '#070b14',
-                              fontWeight: '700',
-                              padding: '7px 14px',
-                              fontSize: '11.5px',
-                              borderRadius: '8px',
-                              border: 'none',
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              boxShadow: '0 2px 10px rgba(212, 175, 55, 0.25)'
-                            }}
-                          >
-                            <Key size={13} /> Check-In
-                          </button>
-                        )}
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
+                          {res.status === 'Confirmed' && (
+                            <button
+                              onClick={() => handleCheckIn(res._id, res.room?.roomNumber)}
+                              style={{
+                                background: 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)',
+                                color: '#070b14',
+                                fontWeight: '700',
+                                padding: '7px 14px',
+                                fontSize: '11.5px',
+                                borderRadius: '8px',
+                                border: 'none',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                boxShadow: '0 2px 10px rgba(212, 175, 55, 0.25)'
+                              }}
+                            >
+                              <Key size={13} /> Check-In
+                            </button>
+                          )}
 
-                        {res.status === 'Checked-In' && (
+                          {res.status === 'Checked-In' && (
+                            <button
+                              onClick={() => handleCheckOut(res._id, res.room?.roomNumber)}
+                              style={{
+                                background: 'rgba(244, 63, 94, 0.08)',
+                                border: '1px solid rgba(244, 63, 94, 0.3)',
+                                color: '#fb7185',
+                                padding: '7px 14px',
+                                fontSize: '11.5px',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                fontWeight: '600'
+                              }}
+                            >
+                              <LogOut size={13} /> Check-Out
+                            </button>
+                          )}
+
+                          {res.status === 'Checked-Out' && (
+                            <span style={{ color: '#10b981', fontSize: '12px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <CheckCircle2 size={14} /> Completed
+                            </span>
+                          )}
+
+                          {/* Delete Action Button */}
                           <button
-                            onClick={() => handleCheckOut(res._id, res.room?.roomNumber)}
+                            onClick={() => handleDeleteReservation(res._id, res.bookingReference)}
                             style={{
                               background: 'rgba(244, 63, 94, 0.08)',
-                              border: '1px solid rgba(244, 63, 94, 0.3)',
+                              border: '1px solid rgba(244, 63, 94, 0.25)',
                               color: '#fb7185',
-                              padding: '7px 14px',
-                              fontSize: '11.5px',
+                              padding: '7px 9px',
                               borderRadius: '8px',
                               cursor: 'pointer',
                               display: 'inline-flex',
                               alignItems: 'center',
-                              gap: '6px',
-                              fontWeight: '600',
-                              transition: 'all 0.2s ease'
+                              transition: 'all 0.15s ease'
                             }}
                             onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(244, 63, 94, 0.2)'}
                             onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(244, 63, 94, 0.08)'}
+                            title="Delete Reservation Record"
                           >
-                            <LogOut size={13} /> Check-Out
+                            <Trash2 size={13} />
                           </button>
-                        )}
-
-                        {res.status === 'Checked-Out' && (
-                          <span style={{ color: '#10b981', fontSize: '12px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <CheckCircle2 size={14} /> Completed
-                          </span>
-                        )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -714,7 +886,52 @@ useEffect(() => {
           </div>
         </div>
       )}
-
+{/* Luxury SweetAlert Styling */}
+      <style>{`
+        .luxury-swal-modal {
+          background: rgba(13, 21, 39, 0.98) !important;
+          border: 1px solid rgba(212, 175, 55, 0.35) !important;
+          border-radius: 20px !important;
+          padding: 26px 20px !important;
+          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9) !important;
+          backdrop-filter: blur(12px) !important;
+        }
+        .luxury-swal-confirm-btn {
+          background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%) !important;
+          color: #ffffff !important;
+          font-weight: 700 !important;
+          font-size: 12px !important;
+          text-transform: uppercase !important;
+          letter-spacing: 0.5px !important;
+          padding: 10px 22px !important;
+          border-radius: 10px !important;
+          border: none !important;
+          cursor: pointer !important;
+          margin: 0 6px !important;
+          box-shadow: 0 4px 14px rgba(244, 63, 94, 0.35) !important;
+        }
+        .luxury-swal-cancel-btn {
+          background: rgba(255, 255, 255, 0.06) !important;
+          border: 1px solid rgba(255, 255, 255, 0.15) !important;
+          color: #cbd5e1 !important;
+          font-size: 12px !important;
+          font-weight: 600 !important;
+          padding: 10px 20px !important;
+          border-radius: 10px !important;
+          cursor: pointer !important;
+          margin: 0 6px !important;
+        }
+        .luxury-swal-gold-btn {
+          background: linear-gradient(135deg, #d4af37 0%, #aa7c11 100%) !important;
+          color: #070b14 !important;
+          font-weight: 700 !important;
+          font-size: 12px !important;
+          padding: 10px 24px !important;
+          border-radius: 10px !important;
+          border: none !important;
+          cursor: pointer !important;
+        }
+      `}</style>
     </div>
   );
 };
